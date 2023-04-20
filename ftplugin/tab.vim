@@ -418,6 +418,6 @@ command! Fix       :call FixColumns()
 nnoremap <buffer><leader>p  :!pandoc % -f tsv -t markdown -o %:r.md<CR>
 nnoremap <buffer><S-ENTER>  :terminal visidata %<CR>
 
-command! Help      vs ~/.config/nvim/doc/tsv/help.tsv
+command! Help      :h vim-table
 
 :call Init()
