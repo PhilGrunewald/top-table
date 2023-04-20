@@ -1,0 +1,6 @@
+Column1	Column2  	
+1	Long text is concealed to the length of the column	
+2	Use :Right for <ENTER> to cycle through rows instead of columns
+3	:Fit will widen columns
+4	Swap columns with <S-LEFT/RIGHT>	
+ 	  	
