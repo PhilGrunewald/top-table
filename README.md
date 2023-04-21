@@ -11,59 +11,45 @@ just want to list information, without fancy spreadsheet tools.
 - move cells around with H,J,K,L
 - size column widths with `<LEFT>`,`<RIGHT>`
 - auto-conceal long lines to fit column width
-- move whole rows/columns with <UP>,<DOWN>,<S-LEFT>,<S-RIGHT>
-- In insert mode <ENTER> can auto advances in rows or columns
+- move whole rows/columns with `<UP>`,`<DOWN>`,`<S-LEFT>`,`<S-RIGHT>`
+- In insert mode `<ENTER>` can auto advances in rows or columns
 - auto populate sequential numbers
 
 *Extension* Files ending in `.tab` are autodetected. Alternatively use `:set ft=tab` 
 
-*Delimiter* The default delimiter is <TAB>. If the header line contains no <TAB>, but it does contain a comma, all commas are replaced with tabs. To convert back to `csv` use *<leader>,* before saving. To continue/revert to <TAB> functionality use *:edit* .
+*Delimiter* The default delimiter is `<TAB>`. If the header line contains no `<TAB>`, but it does contain a comma, all commas are replaced with tabs. To convert back to `csv` use *`<leader>,`* before saving. To continue/revert to `<TAB>` functionality use *:edit* .
 
 
 ## Key bindings
 
 Key (normal mode)
 -------------
--
 
-  <TAB>      ⇥   next col
-
-  <S-TAB>   ⇧⇥   prev col
-
-  <RIGHT>    ▶   widen col
-
-  <LEFT>     ◄   narrow col
-
-  <S-RIGHT> ⇧▶   move col right
-
-  <S-LEFT>  ⇧◄   move col left
-
-  <UP>       ▲   move row up
-
-  <DOWN>     ▼   move row down
-
-  <S-ENTER> ⇧⏎   open in visidata
-
-  <leader>p      create markdown
-
-  <leader>,      turn into csv
-
-  H              move cell left
-
-  L              move cell right
-
-  K              move cell up
-
-  J              move cell down
-
-  ++             fill column with incremental numbers
+| Key            | Action                               |
+| -----------    | ------------                         |
+| `<TAB>`      ⇥ | next col |
+| `<S-TAB>`   ⇧⇥ | prev col |
+| `<RIGHT>`    ▶ | widen col |
+| `<LEFT>`     ◄ | narrow col |
+| `<S-RIGHT>` ⇧▶ | move col right |
+| `<S-LEFT>`  ⇧◄ | move col left |
+| `<UP>`       ▲ | move row up |
+| `<DOWN>`     ▼ | move row down |
+| `<S-ENTER>` ⇧⏎ | open in visidata |
+| `<leader>p`    | create markdown |
+| `<leader>,`    | turn into csv |
+| H              | move cell left |
+| L              | move cell right |
+| K              | move cell up |
+| J              | move cell down |
+| ++             | fill column with incremental numbers |
 
 Key (insert mode)
 -------------
 
-  <ENTER>    ⏎   next col/row (see Right/Down mode)
+  `<ENTER>`    ⏎   next col/row (see Right/Down mode)
 
-  <S-ENTER> ⇧⏎   add new row
+  `<S-ENTER>` ⇧⏎   add new row
 
 
 
@@ -79,9 +65,9 @@ Key (insert mode)
 
 *Visidata*     open this file in visidata
 
-*Right*        <ENTER> advances to the next column 
+*Right*        `<ENTER>` advances to the next column 
              (when insert mode)
-*Down*         <ENTER> advances to the next row
+*Down*         `<ENTER>` advances to the next row
              (when insert mode)
 
 ## Revision history
