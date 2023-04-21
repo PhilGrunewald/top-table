@@ -8,38 +8,61 @@ anything out there that brought the simplicity of vim editing
 to tables. Visidata and Sc-im are powerful tools, but often I
 just want to list information, without fancy spreadsheet tools.
 
-Vim-table let's you
-
-- size column widths
-- conceal long lines
-- move row, columns and cells around
+- move cells around with H,J,K,L
+- size column widths with <LEFT>,<RIGHT>
+- auto-conceal long lines to fit column width
+- move whole rows/columns with <UP>,<DOWN>,<S-LEFT>,<S-RIGHT>
+- In insert mode <ENTER> can auto advances in rows or columns
 - auto populate sequential numbers
-- <ENTER> auto advances in rows or columns
+
+*Extension* Files ending in `.tab` are autodetected. Alternatively use `:set ft=tab` 
+
+*Delimiter* The default delimiter is <TAB>. If the header line contains no <TAB>, but it does contain a comma, all commas are replaced with tabs. To convert back to `csv` use *<leader>,* before saving. To continue/revert to <TAB> functionality use *:edit* .
 
 
 ## Key bindings
 
 Key (normal mode)
 -------------
+-
+
   <TAB>      ⇥   next col
+
   <S-TAB>   ⇧⇥   prev col
+
   <RIGHT>    ▶   widen col
+
   <LEFT>     ◄   narrow col
+
   <S-RIGHT> ⇧▶   move col right
+
   <S-LEFT>  ⇧◄   move col left
+
   <UP>       ▲   move row up
+
   <DOWN>     ▼   move row down
+
   <S-ENTER> ⇧⏎   open in visidata
-  \p             create markdown
+
+  <leader>p      create markdown
+
+  <leader>,      turn into csv
+
   H              move cell left
+
   L              move cell right
+
   K              move cell up
+
   J              move cell down
+
   ++             fill column with incremental numbers
 
 Key (insert mode)
 -------------
+
   <ENTER>    ⏎   next col/row (see Right/Down mode)
+
   <S-ENTER> ⇧⏎   add new row
 
 
@@ -63,4 +86,5 @@ Key (insert mode)
 
 ## Revision history
 
+21 Apr 23   v1.0   Phil Grunewald      Auto comma conversion
 20 Apr 23   v0.1   Phil Grunewald      Initial version with helpfile

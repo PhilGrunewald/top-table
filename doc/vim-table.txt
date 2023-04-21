@@ -81,6 +81,7 @@ Key (insert)
 ====================================================================
 4. Revision history                              *vim-table-revisions*
 
+21 Apr 23   v1.0   Phil Grunewald      Auto comma conversion
 20 Apr 23   v0.1   Phil Grunewald      Initial version with helpfile
 
 
