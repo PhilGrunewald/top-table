@@ -1,14 +1,19 @@
 set listchars=tab:▸\       "show tabs as little arrows ,eol:¬
 
+" ====================
+"  Global variables
+" ====================
+
+" status line sections
 let sl1 = "%f%="
 let sl2 = ''
 let sl3 = ''
+" column widths
 let cols = []
 
-function! Status()
-  let g:sl2 = expand('r'.line('.').'(\%L)×c'.GetCurCol().'('.len(g:cols).')')
-  execute expand('setlocal statusline='.g:sl1.'\\ '.g:sl2.'\\ '.g:sl3)
-endfunction
+" ====================
+"  Utility functions
+" ====================
 
 function ArrayString(arr)
     let str = ''
@@ -18,9 +23,22 @@ function ArrayString(arr)
     return str[:-2]
 endfunction
 
+" ====================
+"      Functions
+" ====================
+
+
 function! Init()
   " set column widths
   let l1 = getline('1')
+  " auto convert comma to tab delimiter
+  if stridx(l1,"\t") > -1
+      echo "Valid tab delimiters"
+  elseif stridx(l1,",") > -1
+      %s/,/\t/g
+      echo "Converted to tab delimiters"
+      let l1 = getline('1')
+  endif
   let varcol = []
   let wcol = 0
   for l in l1
@@ -37,7 +55,15 @@ function! Init()
   execute expand('let g:cols=['.ArrayString(varcol).']')
   execute expand('set vartabstop='.ArrayString(g:cols))
   let g:sl2 = expand('\%Lr×'.len(varcol).'c')
+  call EnterCols()
   call Status()
+endfunction
+
+
+function! Status()
+  " update statusline with row/col info
+  let g:sl2 = expand('r'.line('.').'(\%L)×c'.GetCurCol().'('.len(g:cols).')')
+  execute expand('setlocal statusline='.g:sl1.'\\ '.g:sl2.'\\ '.g:sl3)
 endfunction
 
 
@@ -98,10 +124,10 @@ function! GetCellContent(row,colNo)
   let tab = 0
   while i < a:colNo
       let i += 1
-      let tab += stridx(line[tab:],"\t")+1
+      let tab += stridx(line[tab:], "\t")+1
   endwhile
   let content = line[tab:]
-  let tab = stridx(content,"\t")
+  let tab = stridx(content, "\t")
   return content[:tab]
 endfunction
 
@@ -114,7 +140,7 @@ function! SetCellContent(row,colNo,content)
   let tab = 0
   while i < a:colNo
       let i += 1
-      let tab += stridx(line[tab:],"\t")+1
+      let tab += stridx(line[tab:], "\t")+1
   endwhile
   if tab == 0
       let pre = ''
@@ -123,7 +149,7 @@ function! SetCellContent(row,colNo,content)
       let pre = line[:tab-1]
   endif
 
-  let tab += stridx(line[tab+1:],"\t")+1
+  let tab += stridx(line[tab+1:], "\t")+1
   if tab == 0
     let line = pre.content
   else
@@ -140,7 +166,7 @@ function! Increment()
   while row < line('$')
       let row += 1
       let content += 1
-      call SetCellContent(row,colNo,content."\t")
+      call SetCellContent(row,colNo,content. "\t")
   endwhile
 endfunction
 
@@ -251,7 +277,7 @@ function! ColWidth(direction)
     let n = 0
     let tab = 0
     while n <= colNo
-      let tab += stridx(header[tab:],"\t")+1
+      let tab += stridx(header[tab:], "\t")+1
       let n += 1
     endwhile
     let tab -= 1
@@ -303,11 +329,12 @@ function! PrevCol()
   call Status()
 endfunction
 
+
 function! NextCol()
   " find next tab or loop to col 0
   let line = getline('.')
   let col = getcurpos()[2]-1
-  let tab = stridx(line[col:],"\t")+1
+  let tab = stridx(line[col:], "\t")+1
   if tab > 0
     execute expand('normal '.tab.'l')
   else
@@ -315,6 +342,7 @@ function! NextCol()
   endif
   call Status()
 endfunction
+
 
 function! EnterDown()
     " go down one row or add when at bottom
@@ -331,7 +359,22 @@ function! EnterDown()
 endfunction
 
 
-function! PhilMarkdownFolds(lnum)
+function! EnterRows()
+  " in insert mode, <ENTER> advances to the right
+  inoremap <ENTER> <ESC>:call NextCol()<CR>a
+  let g:sl3 = expand('in_rows')
+  call Status()
+endfunction
+
+function! EnterCols()
+  " in insert mode, <ENTER> advances to the next row
+  inoremap <ENTER> <ESC>:call EnterDown()<CR>i
+  let g:sl3 = expand('in_cols')
+  call Status()
+endfunction
+
+
+function! FoldTable(lnum)
     let line = getline(a:lnum)
     if ( line =~ '^\t\t\t.*' )
         return '3'
@@ -343,16 +386,21 @@ function! PhilMarkdownFolds(lnum)
         return '0'
 endfunction
 
-if !exists("g:vim_markdown_folding_disabled")
-  setlocal foldexpr=PhilMarkdownFolds(v:lnum)
-  setlocal foldmethod=expr
-  setlocal foldenable
-  setlocal foldlevel=5
-  setlocal foldcolumn=4
-endif
+" ====================
+"     Settings
+" ====================
 
-setlocal noexpandtab
+" Folding
+setlocal foldexpr=FoldTable(v:lnum)
+setlocal foldmethod=expr
+setlocal foldenable
+setlocal foldlevel=5
+setlocal foldcolumn=4
+
+
+" Tabs and display
 setlocal listchars=tab:\ \ \|       "tabs right bound bar
+setlocal noexpandtab
 setlocal softtabstop=0
 setlocal shiftwidth=0
 setlocal nosmarttab 
@@ -360,46 +408,52 @@ setlocal breakindent
 setlocal nowrap
 setlocal conceallevel=2
 
-" nnoremap ++ <C-a>
-nnoremap -- <C-x>
+" ==============
+"  Commands
+" ==============
+
+command! Help     :h vim-table
+
+" Entry mode: downwards or sidewards
+command! InCols   :call EnterCols()<CR>
+command! InRows   :call EnterRows()<CR>
+
+" Column sizing
+command! Fit      :call FitColumns()
+command! Fix      :call FixColumns()
+
+" Edit external
+command! Visidata :terminal visidata %
+
+" ====================
+"     Mappings
+" ====================
+
+" ==============
+"  Insert mode
+" ==============
 
 inoremap <TAB>   <TAB>
+
+
+" ==============
+"  Normal mode
+" ==============
 
 nnoremap <TAB>   :call NextCol()<CR>
 nnoremap <S-TAB> :call PrevCol()<CR>
 
-" Entry mode: downwards or sidewards
-" inoremap <ENTER> <ESC>:call EnterDown()<CR>i
-
-" command! Down  inoremap <ENTER> <ESC>:call EnterDown()<CR>i
-
-command! InCols :call EnterCols()<CR>
-command! InRows :call EnterRows()<CR>
-"Right inoremap <ENTER> <ESC>:call NextCol()<CR>a
-
-function! EnterRows()
-  inoremap <ENTER> <ESC>:call NextCol()<CR>a
-  let g:sl3 = expand('in_rows')
-  call Status()
-endfunction
-
-function! EnterCols()
-  inoremap <ENTER> <ESC>:call EnterDown()<CR>i
-  let g:sl3 = expand('in_cols')
-  call Status()
-endfunction
-
-call EnterCols()
-
-command! InRows :call NextCol()
-
-command! Visidata :terminal visidata %
-
+" Row swapping (bubble up/down
+nnoremap <Up> ddkP
+nnoremap <Down> ddp
+vnoremap <Up> xkP`[V`]
+vnoremap <Down> xp`[V`]
 
 " Column swapping
 nnoremap <buffer><S-RIGHT>  :call SwapCol(0)<CR>
 nnoremap <buffer><S-LEFT>   :call SwapCol(-1)<CR>
 
+" Cell swapping
 nnoremap <buffer>K  :call SwapCell('up')<CR>
 nnoremap <buffer>J  :call SwapCell('down')<CR>
 nnoremap <buffer>H  :call SwapCell('left')<CR>
@@ -409,15 +463,14 @@ nnoremap <buffer>L  :call SwapCell('right')<CR>
 nnoremap <buffer><RIGHT>  :call ColWidth('+')<CR>
 nnoremap <buffer><LEFT>   :call ColWidth('-')<CR>
 
+" Fill with incremental values
 nnoremap ++        :call Increment()<CR>
 command! Increment :call Increment()
-command! Fit       :call FitColumns()
-command! Fix       :call FixColumns()
+
 
 " Turn to markdown
 nnoremap <buffer><leader>p  :!pandoc % -f tsv -t markdown -o %:r.md<CR>
+nnoremap <buffer><leader>,  :%s/\t/,/g<CR>
 nnoremap <buffer><S-ENTER>  :terminal visidata %<CR>
 
-command! Help      :h vim-table
-
-:call Init()
+call Init()
