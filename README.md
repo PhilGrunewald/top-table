@@ -9,7 +9,7 @@ to tables. Visidata and Sc-im are powerful tools, but often I
 just want to list information, without fancy spreadsheet tools.
 
 - move cells around with H,J,K,L
-- size column widths with <LEFT>,<RIGHT>
+- size column widths with `<LEFT>`,`<RIGHT>`
 - auto-conceal long lines to fit column width
 - move whole rows/columns with <UP>,<DOWN>,<S-LEFT>,<S-RIGHT>
 - In insert mode <ENTER> can auto advances in rows or columns
