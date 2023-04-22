@@ -42,7 +42,8 @@ Key (normal mode)
 | `L`         | move cell right                      |
 | `K`         | move cell up                         |
 | `J`         | move cell down                       |
-| `+` `+`     | fill column with incremental numbers |
+| `++`     | fill column with incremental numbers |
+| `==`     | insert the sum of all numerical values in column above this row |
 
 Key (insert mode)
 -------------
@@ -60,6 +61,8 @@ Key (insert mode)
 | ----------- | ------------                                           |
 | *Help*      | open this file in split view                           |
 | *Increment* | fill column with incremental numbers                   |
+| *Sum*       |  insert the sum of all numerical values in column above this row |
+| *Avg*       |  insert the average of all numerical values in column above this row |
 | *Fit*       | size columns to longest element                        |
 | *Fix*       | size columns to 10 wide                                |
 | *Visidata*  | open this file in visidata                             |
@@ -70,5 +73,6 @@ Key (insert mode)
 
 | Date      | Ver.  | Author         | Updates                       |
 | ----      | ----- | ------         | --                            |
+| 22 Apr 23 | v1.1  | Phil Grunewald | Column sums / avg             |
 | 21 Apr 23 | v1.0  | Phil Grunewald | Auto comma conversion         |
 | 20 Apr 23 | v0.1  | Phil Grunewald | Initial version with helpfile |

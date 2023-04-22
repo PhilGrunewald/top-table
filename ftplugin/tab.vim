@@ -155,19 +155,8 @@ function! SetCellContent(row,colNo,content)
   else
     let line = pre.content.line[tab+1:]
   endif
+  let line = substitute(line, '/', '\\\\/', 'g')
   execute expand(a:row."s/.*/".line)
-endfunction
-
-
-function! Increment()
-  let row = getcurpos()[1]
-  let colNo = GetCurCol()
-  let content = GetCellContent(row,colNo)
-  while row < line('$')
-      let row += 1
-      let content += 1
-      call SetCellContent(row,colNo,content. "\t")
-  endwhile
 endfunction
 
 
@@ -387,6 +376,49 @@ function! FoldTable(lnum)
 endfunction
 
 " ====================
+"   Spreadsheetish
+" ====================
+
+function! Increment()
+  let row = getcurpos()[1]
+  let colNo = GetCurCol()
+  let content = GetCellContent(row,colNo)
+  while row < line('$')
+      let row += 1
+      let content += 1
+      call SetCellContent(row,colNo,content. "\t")
+  endwhile
+endfunction
+
+function! Calc(operand)
+  " sums up column and inserts sum / avg
+  let bottomline = getcurpos()[1]
+  let colNo = GetCurCol()
+  let sum = 0
+  let cnt = 0
+  let row = 1
+  while row < bottomline
+    let col = GetCellContent(row,colNo)
+    if ((col == '0') || (str2float(col) != 0))
+      let cnt = cnt + 1
+      let sum += str2float(col)
+    endif
+    let row += 1
+  endwhile
+  if a:operand == 'avg'
+    let result = join(['avg ',sum/cnt])
+  else
+    let result = join(['=',sum])
+  endif
+  call SetCellContent(row,colNo,result."\t")
+  if (row-cnt-2) == 0
+    echo join(["Sum:", sum, " Avg: ", sum/cnt, " Count:",cnt])
+  else
+    echo join(["Sum:", sum, " Avg: ", sum/cnt, " Count: ",cnt," Invalid: ", row-cnt-2])
+  endif
+endfunction
+
+" ====================
 "     Settings
 " ====================
 
@@ -396,13 +428,13 @@ setlocal foldmethod=expr
 setlocal foldenable
 setlocal foldlevel=5
 setlocal foldcolumn=4
+setlocal shiftwidth=2
 
 
 " Tabs and display
 setlocal listchars=tab:\ \ \|       "tabs right bound bar
 setlocal noexpandtab
 setlocal softtabstop=0
-setlocal shiftwidth=0
 setlocal nosmarttab 
 setlocal breakindent
 setlocal nowrap
@@ -415,12 +447,17 @@ setlocal conceallevel=2
 command! Help     :h vim-table
 
 " Entry mode: downwards or sidewards
-command! InCols   :call EnterCols()<CR>
-command! InRows   :call EnterRows()<CR>
+command! InCols   :call EnterCols()
+command! InRows   :call EnterRows()
 
 " Column sizing
 command! Fit      :call FitColumns()
 command! Fix      :call FixColumns()
+
+" Calculations
+command! Increment :call Increment()
+command! Sum      :call Calc('sum')
+command! Avg      :call Calc('avg')
 
 " Edit external
 command! Visidata :terminal visidata %
@@ -465,7 +502,7 @@ nnoremap <buffer><LEFT>   :call ColWidth('-')<CR>
 
 " Fill with incremental values
 nnoremap ++        :call Increment()<CR>
-command! Increment :call Increment()
+nnoremap ==        :call Calc('sum')<CR>
 
 
 " Turn to markdown

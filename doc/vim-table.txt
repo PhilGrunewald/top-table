@@ -5,7 +5,7 @@ CONTENTS                                          *vim-table-contents*
 
     1. Introduction ......... |vim-table-intro|
     2. Key bindings ......... |vim-table-keys|
-    3. Commands ............. |vim-table-commants|
+    3. Commands ............. |vim-table-commands|
     4. Revision history ..... |vim-table-revisions|
 
 
@@ -36,27 +36,28 @@ Vim-table let's you
 
 Key (normal)
 -------------
-  <TAB>      ⇥   next col
-  <S-TAB>   ⇧⇥   prev col
-  <RIGHT>    ▶   widen col
-  <LEFT>     ◄   narrow col
-  <S-RIGHT> ⇧▶   move col right
-  <S-LEFT>  ⇧◄   move col left
-  <UP>       ▲   move row up
-  <DOWN>     ▼   move row down
-  <S-ENTER> ⇧⏎   open in visidata
+  <TAB>          next col
+  <S-TAB>        prev col
+  <RIGHT>        widen col
+  <LEFT>         narrow col
+  <S-RIGHT>      move col right
+  <S-LEFT>       move col left
+  <UP>           move row up
+  <DOWN>         move row down
+  <S-ENTER>      open in visidata
   <leader>p      create markdown
   <leader>,      turn into csv
-  H              move cell left
-  L              move cell right
-  K              move cell up
-  J              move cell down
-  ++             fill column with incremental numbers
+  `H`              move cell left
+  `L`              move cell right
+  `K`              move cell up
+  `J`              move cell down
+  `++`             fill column with incremental numbers
+  `==`             insert the sum of all numerical values in column above this row
 
 Key (insert)
 -------------
-  <ENTER>    ⏎   next col/row (see Right/Down mode)
-  <S-ENTER> ⇧⏎   add new row
+  <ENTER>        next col/row (see Right/Down mode)
+  <S-ENTER>      add new row
 
 
 
@@ -64,23 +65,20 @@ Key (insert)
 3. Commands                                       *vim-table-commands*
 
 *Help*         open this file in split view
-
 *Increment*    fill column with incremental numbers
-
+*Sum*          insert the sum of all numerical values in column above this row
+*Avg*          insert the average of all numerical values in column above this row
 *Fit*          size columns to longest element
-
 *Fix*          size columns to 10 wide
-
 *Visidata*     open this file in visidata
-
 *Right*        <ENTER> advances to the next column 
-             (when insert mode)
 *Down*         <ENTER> advances to the next row
              (when insert mode)
 
 ====================================================================
 4. Revision history                              *vim-table-revisions*
 
+22 Apr 23   v1.1   Phil Grunewald      Column sums / avg
 21 Apr 23   v1.0   Phil Grunewald      Auto comma conversion
 20 Apr 23   v0.1   Phil Grunewald      Initial version with helpfile
 
