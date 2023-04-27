@@ -31,10 +31,8 @@ endfunction
 function! Init()
   " set column widths
   let l1 = getline('1')
-  " auto convert comma to tab delimiter
-  if stridx(l1,"\t") > -1
-      echo "Valid tab delimiters"
-  elseif stridx(l1,",") > -1
+  " auto convert comma to tab delimiter (if commas, but no tabs)
+  if (stridx(l1,"\t") == -1) && (stridx(l1,",") > -1)
       %s/,/\t/g
       echo "Converted to tab delimiters"
       let l1 = getline('1')

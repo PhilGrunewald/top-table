@@ -1,7 +1,3 @@
-let b:current_syntax = "phil_tsv"
-
-so ~/.config/nvim/PhilHighlight.vim
-
 highlight Conceal     ctermfg=green  ctermbg=none
 highlight NonText     ctermfg=black  ctermbg=none
 highlight SpareSpace  ctermfg=black  cterm=underline
