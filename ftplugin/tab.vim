@@ -5,11 +5,13 @@ set listchars=tab:▸\       "show tabs as little arrows ,eol:¬
 " ====================
 
 " status line sections
-let sl1 = "%f%="
-let sl2 = ''
-let sl3 = ''
+let g:sl1 = "%f%="
+let g:sl2 = ''
+let g:sl3 = ''
 " column widths
-let cols = []
+let g:cols = []
+
+let g:TagExtension = ''
 
 " ====================
 "  Utility functions
@@ -23,6 +25,28 @@ function ArrayString(arr)
     return str[:-2]
 endfunction
 
+fu Escape(str)
+  let str = a:str
+  let str = substitute(str,'\','\\\\\\\\','g')
+  let str = substitute(str,'/','\\\\/','g')
+  let str = substitute(str,'[','\\\\[','g')
+  let str = substitute(str,']','\\\\]','g')
+  return str
+endfu
+fu Rescape(str)
+  let str = a:str
+  let str = substitute(str,'&','\\\\\&','g')
+  let str = substitute(str,'|','\\\\|','g')
+  return str
+endfu
+
+fu Deslash(str)
+  let str = a:str
+  let str = substitute(str,'\\','','g')
+  let str = substitute(str,'\/','','g')
+  let str = substitute(str,'&','','g')
+  return str
+endfu
 " ====================
 "      Functions
 " ====================
@@ -55,6 +79,17 @@ function! Init()
   let g:sl2 = expand('\%Lr×'.len(varcol).'c')
   call EnterCols()
   call Status()
+  " Header split with sync scrolling
+  highlight VertSplit   ctermfg=DarkGreen    ctermbg=black  cterm=NONE
+  wincmd o
+  set scrollbind
+  split
+  set scrollbind
+  set scrollopt-=ver
+  resize 1
+  wincmd j
+  " move second line to top
+  normal jzt
 endfunction
 
 
@@ -64,6 +99,7 @@ function! Status()
   execute expand('setlocal statusline='.g:sl1.'\\ '.g:sl2.'\\ '.g:sl3)
 endfunction
 
+" Column operations
 
 function! FixColumns()
   let i = 0
@@ -100,6 +136,7 @@ function! FitColumns()
   set conceallevel=0
 endfunction
 
+
 function! GetColStart(l,col)
   " returns at which characters column `col` [0,1,2..] starts
   let col   = 0
@@ -115,6 +152,7 @@ function! GetColStart(l,col)
   return start
 endfunction
 
+" Cell operations
 
 function! GetCellContent(row,colNo)
   let line = getline(a:row)
@@ -233,75 +271,86 @@ function! SwapCol(offset)
   set syntax=tab
 endfunction
 
-
-function! GetCurCol()
+fu! GetCurCol()
     "return the column number of current cursor
-    let col = getcurpos()[4] "[4] > one char (unlike [2])
-    let colRight = 0
-    let colNo    = 0
-    for width in g:cols
-        let colRight += width
-        if (colRight < col)
-            let colNo += 1
-        endif
-    endfor
+    let col   = getcurpos()[2]
+    let line  = getline('.')
+    let colNo = 0
+    let c     = 1
+    while c < col
+      if line[c-1] == "\t" | let colNo += 1 | endif
+      let c += 1
+    endwhile
     return colNo
-endfunction
+endfu
 
 
 function! ColWidth(direction)
-    " add/remove spacer in header and alter vartabstops
-    " Note: global 'cols' is read from header line
-    let spacer = '  '
-    let diff = len(spacer)
+  " add/remove spacer in header and alter vartabstops
+  " Note: global 'cols' is read from header line
+  let spacer = '  '
+  let diff = len(spacer)
 
-    let row = getcurpos()[1]
-    let col = getcurpos()[4] "[4] > one char (unlike [2])
-    let colNo = GetCurCol()
+  let row = getcurpos()[1]
+  let col = getcurpos()[4] "[4] > one char (unlike [2])
+  let colNo = GetCurCol()
 
-    " get position of tab to the left 
-    let header = getline('1')
-    let n = 0
-    let tab = 0
-    while n <= colNo
-      let tab += stridx(header[tab:], "\t")+1
-      let n += 1
-    endwhile
-    let tab -= 1
+  " get position of tab to the left 
+  let header = getline('1')
+  let n = 0
+  let tab = 0
+  while n <= colNo
+    let tab += stridx(header[tab:], "\t")+1
+    let n += 1
+  endwhile
+  let tab -= 1
 
-    " the first line gets spaces added/removed 
-    " ± global col
-    if a:direction == '+'
-      if tab == 0
-        let header = spacer.header
-      else
-        let header = header[:tab-1].spacer.header[tab:]
-      endif
-      let g:cols[colNo] += diff
+  " the first line gets spaces added/removed 
+  " ± global col
+  if a:direction == '+'
+    " expand column
+    if tab == 0
+      " no column label in first col
+      let header = spacer.header
     else
-      if header[tab-diff:tab-1] == spacer
-        if tab-diff == 0
-          let header = header[diff:]
-        else
-          let header = header[:tab-diff-1].header[tab:]
-        endif
-      endif
-      if g:cols[colNo] > 2*diff
-        let g:cols[colNo] -= diff
+      " insert spaces
+      let header = header[:tab-1].spacer.header[tab:]
+    endif
+    " widen tab
+    let g:cols[colNo] += diff
+  else
+    " reduce column
+    if header[tab-diff:tab-1] == spacer
+      " enough space to shorten column
+      if tab-diff == 0
+        " remove spaces
+        let header = header[diff:]
+      else
+        let header = header[:tab-diff-1].header[tab:]
       endif
     endif
-
-    " apply new var-tab-stops, replace header and return
-    execute expand('set vartabstop='.ArrayString(g:cols))
-    execute expand("1s/.*/".header)
-    execute expand(col.','.row)
-    echo expand('Column '.(colNo+1)." now ".g:cols[colNo]." wide")
-    set syntax=tab
+    if g:cols[colNo] > 2*diff
+      " shorten tab
+      let g:cols[colNo] -= diff
+    endif
+  endif
+  " reset tabstops
+  execute expand('set vartabstop='.ArrayString(g:cols))
+  " replace the header
+  execute expand("1s/.*/".header)
+  " return to starting point
+  execute expand(col.','.row)
+  " move to next column
+  echo expand('Column '.(colNo+1)." now ".g:cols[colNo]." wide")    
+  " redraws the conceals
+  set syntax=tab
 endfunction
 
+" Cell navigation
 
 function! PrevCol()
   " find tab on left. Stop at col 0
+  call CellTrim()
   let line = getline('.')
   normal h
   let col = col('.')-1
@@ -313,12 +362,26 @@ function! PrevCol()
       normal l
     endif
   endwhile
-  call Status()
+  call CellUntrim()
 endfunction
 
+fu! GoToCol(n)
+  normal 0
+  let line = getline('.')
+  let c = 0
+  let col = 0
+  while col < a:n && col > -1
+    if line[c] == "\t" | let col += 1 | endif
+    let c += 1
+    normal l
+    if c > len(line) | let col = -1 | endif
+  endwhile
+  return col
+endfu
 
 function! NextCol()
   " find next tab or loop to col 0
+  call CellTrim()
   let line = getline('.')
   let col = getcurpos()[2]-1
   let tab = stridx(line[col:], "\t")+1
@@ -327,24 +390,28 @@ function! NextCol()
   else
     execute expand('normal '.tab)
   endif
+  call CellUntrim()
   call Status()
 endfunction
 
 
 function! EnterDown()
-    " go down one row or add when at bottom
-    if line('.') == line('$')
-        normal o
-    else
-        if col('.') == 1
-            normal j
-        else
-            normal lj
-        endif
-    endif
+  " go down one row or add when at bottom
+  call CellTrim()
+  if line('.') == line('$')
+      normal o
+  else
+      if col('.') == 1
+          normal j
+      else
+          normal lj
+      endif
+  endif
   call Status()
+  echo "down"
 endfunction
 
+" Entry mode
 
 function! EnterRows()
   " in insert mode, <ENTER> advances to the right
@@ -362,16 +429,104 @@ endfunction
 
 
 function! FoldTable(lnum)
-    let line = getline(a:lnum)
-    if ( line =~ '^\t\t\t.*' )
-        return '3'
-    elseif ( line =~ '^\t\t.*' )
-        return '2'
-    elseif ( line =~ '^\t.*' )
-        return '1'
-    else
-        return '0'
+  " Fold if column 1,2 or 3 are empty
+  let line = getline(a:lnum)
+  if ( line =~ '^\t\t\t.*' )
+      return '3'
+  elseif ( line =~ '^\t\t.*' )
+      return '2'
+  elseif ( line =~ '^\t.*' )
+      return '1'
+  else
+      return '0'
 endfunction
+
+
+" ====================
+"    Text truncing
+" ====================
+
+fu! CellTrim()
+  " shorten to width and save content to file
+  let row = getcurpos()[1]
+  let colNo = GetCurCol()
+  let width = g:cols[colNo]
+  let cell = GetCellContent(row,colNo)
+  if len(cell) > width && match(cell,"<\\d\\+\\t") == -1
+    " cell is too wide and not collapsed > collapse
+    let col = GetCurCol()
+    let width = width - 4
+    let text = cell[:-2]
+    let i = 1
+    while filereadable(".".Deslash(text[:width]).i)
+      let i+=1
+    endwhile
+    " Save full cell content and replace with filename
+    let fname = Deslash(text[:width])."<".i
+    let text = split(Escape(text),"\n")
+    call writefile(text,".".fname)
+    execute expand("s/".Escape(cell)."/".fname."\t/")
+    call GoToCol(col)
+  endif
+endfu
+
+fu! CellUntrim()
+  " Expand cell content from file
+  let row = getcurpos()[1]
+  let colNo = GetCurCol()
+  let cell = GetCellContent(row,colNo)
+  if match(cell,"<\\d\\+\\t") > -1
+    let col = getcurpos()[4]
+    let text  = join(readfile(".".cell[:-2]),"\r")
+    silent! execute expand("!rm '.".cell[:-2]."'")
+    execute expand("s/".Escape(cell)."/".Rescape(text)."\t/")
+    execute expand(col.','.row)
+  endif
+  call Status()
+endfu
+
+
+fu! CellExpandAll()
+  let row = 1
+  while row < line('$')
+    let col = match(getline(row),"<\\d\\+\\t")
+    while col > -1
+      let text = getline(row)
+      execute expand("normal ".row."G0".col."l")
+      call CellUntrim()
+      let col = match(getline(row),"<\\d\\+\\t")
+    endwhile
+    let row += 1
+  endwhile
+endfu
+
+fu! CellCollapseAll()
+  let row = 1
+  while row < line('$')
+    execute expand("normal ".row."G")
+    let col = 0
+    while GoToCol(col) != -1
+      call CellTrim()
+      echo "Row ".row."  Col ".col
+      let col += 1
+    endwhile
+    let row += 1
+  endwhile
+endfu
+
+fu! CellToggle()
+  " trim call and save content / expand cell based on that content
+  let row = getcurpos()[1]
+  let colNo = GetCurCol()
+  let width = g:cols[colNo]
+  let cell = GetCellContent(row,colNo)
+  if len(cell) > width
+    call CellTrim()
+  else
+    call CellUntrim()
+  endif
+endf
+
 
 " ====================
 "   Spreadsheetish
@@ -437,20 +592,23 @@ setlocal nosmarttab
 setlocal breakindent
 setlocal nowrap
 setlocal conceallevel=2
+setlocal concealcursor=n     "only expand in insert mode
 
 " ==============
 "  Commands
 " ==============
 
-command! Help     :h vim-table
+command! Help     :h vi-shing-table
 
 " Entry mode: downwards or sidewards
 command! InCols   :call EnterCols()
 command! InRows   :call EnterRows()
 
 " Column sizing
-command! Fit      :call FitColumns()
-command! Fix      :call FixColumns()
+command! Fit         :call FitColumns()
+command! Fix         :call FixColumns()
+command! TabExpand   :call CellExpandAll()<CR>
+command! TabCollapse :call CellCollapseAll()<CR>
 
 " Calculations
 command! Increment :call Increment()
@@ -475,10 +633,16 @@ inoremap <TAB>   <TAB>
 "  Normal mode
 " ==============
 
-nnoremap <TAB>   :call NextCol()<CR>
-nnoremap <S-TAB> :call PrevCol()<CR>
+" avoid editing trimmed cells
+" nnoremap i       :call CellUntrim()<CR>i
+" nnoremap a       :call CellUntrim()<CR>a
+nnoremap <buffer>k       :call CellTrim()<CR>k:call CellUntrim()<CR>
+nnoremap <buffer>j       :call CellTrim()<CR>j:call CellUntrim()<CR>
 
-" Row swapping (bubble up/down
+nnoremap <buffer><TAB>   :call NextCol()<CR>
+nnoremap <buffer><S-TAB> :call PrevCol()<CR>
+
+" Row swapping (bubble up/down)
 nnoremap <Up> ddkP
 nnoremap <Down> ddp
 vnoremap <Up> xkP`[V`]
@@ -499,9 +663,12 @@ nnoremap <buffer><RIGHT>  :call ColWidth('+')<CR>
 nnoremap <buffer><LEFT>   :call ColWidth('-')<CR>
 
 " Fill with incremental values
-nnoremap ++        :call Increment()<CR>
-nnoremap ==        :call Calc('sum')<CR>
+nnoremap <buffer>++        :call Increment()<CR>
+nnoremap <buffer>==        :call Calc('sum')<CR>
 
+nnoremap <buffer>>>          :call CellToggle()<CR>
+nnoremap <buffer><C-.><C-.>  :call CellExpandAll()<CR>
+nnoremap <buffer><C-,><C-,>  :call CellCollapseAll()<CR>
 
 " Turn to markdown
 nnoremap <buffer><leader>p  :!pandoc % -f tsv -t markdown -o %:r.md<CR>
@@ -509,3 +676,5 @@ nnoremap <buffer><leader>,  :%s/\t/,/g<CR>
 nnoremap <buffer><S-ENTER>  :terminal visidata %<CR>
 
 call Init()
+" wincmd j
+" normal <C-w><C-w>
