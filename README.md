@@ -9,10 +9,10 @@ just want to organise information, without all that spreadsheet clobber.
 vi-shing-table let's you
 
 - move cells around with H,J,K,L
-- size column widths with <LEFT>,<RIGHT>
+- size column widths with <S-Left>,<S-Right>
 - hide the overhang of lines to fit the column width with `>>`
-- move whole rows/columns with <UP>,<DOWN>,<S-LEFT>,<S-RIGHT>
-- In insert mode <ENTER> can auto advances in rows or columns
+- move whole rows/columns with <Up>,<Down>,<C-Left>,<C-Right>
+- In insert mode <Enter> can auto advances in rows or columns
 - auto populate sequential numbers
 
 *File-type* Files ending in `.tab` are autodetected. Alternatively use `:set ft=tab`
@@ -43,13 +43,12 @@ Key (normal)
 | ----------- | ------------                         |
 | <TAB>       |  next col |
 | <S-TAB>     |  prev col |
-| <RIGHT>     |  widen col |
-| <LEFT>      |  narrow col |
-| <S-RIGHT>   |  move col right |
-| <S-LEFT>    |  move col left |
+| <S-RIGHT>     |  widen col |
+| <S-LEFT>      |  narrow col |
+| <C-RIGHT>   |  move col right |
+| <C-LEFT>    |  move col left |
 | <UP>        |  move row up |
 | <DOWN>      |  move row down |
-| <S-ENTER>   |  open in visa data |
 | <leader>p   |  create markdown |
 | <leader>,   |  turn into csv |
 | *<C-..>*    |    |TabExpand| Expand all cells |

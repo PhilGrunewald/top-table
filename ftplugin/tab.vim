@@ -79,6 +79,10 @@ function! Init()
   let g:sl2 = expand('\%Lr×'.len(varcol).'c')
   call EnterCols()
   call Status()
+  if line('$') > 40 | call SplitHeader() | endif
+endfunction
+
+fu! SplitHeader()
   " Header split with sync scrolling
   highlight VertSplit   ctermfg=DarkGreen    ctermbg=black  cterm=NONE
   wincmd o
@@ -90,8 +94,7 @@ function! Init()
   wincmd j
   " move second line to top
   normal jzt
-endfunction
-
+endfu
 
 function! Status()
   " update statusline with row/col info
@@ -202,18 +205,16 @@ function! SwapCell(direction)
   let colNo = GetCurCol()
   let c1 = GetCellContent(row,colNo)
   if a:direction == 'up' && row > 1
-    let c2 = GetCellContent(row+1,colNo)
+    let c2 = GetCellContent(row-1,colNo)
     call SetCellContent(row  ,colNo,c2)
     call SetCellContent(row-1,colNo,c1)
-    execute expand(col.','.row)
-    normal k
+    execute expand(col.','.(row-1))
   endif
   if a:direction == 'down' && row < line('$')
     let c2 = GetCellContent(row+1,colNo)
     call SetCellContent(row  ,colNo,c2)
     call SetCellContent(row+1,colNo,c1)
-    execute expand(col.','.row)
-    normal j
+    execute expand(col.','.(row+1))
   endif
   if a:direction == 'left' && colNo > 0
     let c2 = GetCellContent(row,colNo-1)
@@ -456,7 +457,8 @@ fu! CellTrim()
     " cell is too wide and not collapsed > collapse
     let col = GetCurCol()
     let width = width - 4
-    let text = cell[:-2]
+    " let text = cell[:-2]
+    let text = split(cell,"\t")[0]
     let i = 1
     while filereadable(".".Deslash(text[:width]).i)
       let i+=1
@@ -649,8 +651,8 @@ vnoremap <Up> xkP`[V`]
 vnoremap <Down> xp`[V`]
 
 " Column swapping
-nnoremap <buffer><S-RIGHT>  :call SwapCol(0)<CR>
-nnoremap <buffer><S-LEFT>   :call SwapCol(-1)<CR>
+nnoremap <buffer><C-RIGHT>  :call SwapCol(0)<CR>
+nnoremap <buffer><C-LEFT>   :call SwapCol(-1)<CR>
 
 " Cell swapping
 nnoremap <buffer>K  :call SwapCell('up')<CR>
@@ -659,8 +661,8 @@ nnoremap <buffer>H  :call SwapCell('left')<CR>
 nnoremap <buffer>L  :call SwapCell('right')<CR>
 
 " Column sizing
-nnoremap <buffer><RIGHT>  :call ColWidth('+')<CR>
-nnoremap <buffer><LEFT>   :call ColWidth('-')<CR>
+nnoremap <buffer><S-Right>  :call ColWidth('+')<CR>
+nnoremap <buffer><S-Left>   :call ColWidth('-')<CR>
 
 " Fill with incremental values
 nnoremap <buffer>++        :call Increment()<CR>
@@ -673,8 +675,6 @@ nnoremap <buffer><C-,><C-,>  :call CellCollapseAll()<CR>
 " Turn to markdown
 nnoremap <buffer><leader>p  :!pandoc % -f tsv -t markdown -o %:r.md<CR>
 nnoremap <buffer><leader>,  :%s/\t/,/g<CR>
-nnoremap <buffer><S-ENTER>  :terminal visidata %<CR>
+" nnoremap <buffer><S-ENTER>  :terminal visidata %<CR>
 
 call Init()
-" wincmd j
-" normal <C-w><C-w>
