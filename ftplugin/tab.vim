@@ -11,8 +11,9 @@ let g:sl3 = ''
 " column widths
 let g:cols = []
 
-let g:TagExtension = ''
-let g:multiline = 1
+" Only one column can be expanded (otherwise multiline is complicated)
+" To expand a different one, all others are collapsed first
+let g:OpenCol = -1
 
 " ====================
 "  Utility functions
@@ -53,13 +54,7 @@ fu Rescape(str,colNo)
   let str = substitute(str,'&','\\\\\&','g')
   let str = substitute(str,'|','\\\\|','g')
   let pad = repeat(" ",Add(g:cols[:a:colNo]))
-  if g:multiline == 1
-    echo "ML"
-    let str = substitute(str,'\r',expand('\\r'.pad),'g')
-  else
-    echo "oneline"
-    let str = substitute(str,'\r','; ','g')
-  endif
+  let str = substitute(str,'\r',expand('\\r'.pad),'g')
   return str
 endfu
 
@@ -495,7 +490,6 @@ fu! CellTrim()
   let width = g:cols[colNo]
   let cell = GetCellContent(row,colNo)
   if len(cell) > width && match(cell,"<\\d\\+\\t") == -1
-    echo cell
     " cell is too wide and not collapsed > collapse
     let width = width - 4
     let i = 1
@@ -509,7 +503,6 @@ fu! CellTrim()
     let text = split(text,"\n")
     call writefile(text,".".fname)
     execute expand("s/".Escape(cell)."/".fname."\t/")
-    " call GoCol(colNo)
   endif
   normal `c
 endfu
@@ -523,6 +516,8 @@ fu! CellUntrim()
   if match(cell,"<\\d\\+\\t") > -1
     let text  = join(readfile(".".cell[:-2]),"\r")
     silent! execute expand("!rm '.".cell[:-2]."'")
+    if g:OpenCol != colNo | call CellCollapseAll() | endif
+    let g:OpenCol = colNo
     execute expand("s/".Escape(cell)."/".Rescape(text,colNo)."/")
     normal `u
   endif
@@ -531,7 +526,6 @@ endfu
 
 
 fu! CellExpandAll()
-  let g:multiline = 0
   let rowNo = getcurpos()[1]
   let colNo = GetCurCol()
   let row = 1
@@ -545,7 +539,6 @@ fu! CellExpandAll()
     let row += 1
   endwhile
   call GoRowCol(rowNo,colNo)
-  let g:multiline = 1
 endfu
 
 fu! CellCollapseAll()
