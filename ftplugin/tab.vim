@@ -12,6 +12,7 @@ let g:sl3 = ''
 let g:cols = []
 
 let g:TagExtension = ''
+let g:multiline = 1
 
 " ====================
 "  Utility functions
@@ -25,23 +26,46 @@ function ArrayString(arr)
     return str[:-2]
 endfunction
 
+fu! Add(list)
+  let i = 0
+  let sum = 0
+  while i < len(a:list)-1
+    let sum += a:list[i]
+    let i += 1
+  endwhile
+  return sum
+endfu
+
+
 fu Escape(str)
   let str = a:str
+  let str = substitute(str,'\n','NEWLINE','g')
   let str = substitute(str,'\','\\\\\\\\','g')
   let str = substitute(str,'/','\\\\/','g')
   let str = substitute(str,'[','\\\\[','g')
   let str = substitute(str,']','\\\\]','g')
+  let str = substitute(str,'NEWLINE','\\\\n','g')
+  " let str = substitute(str,'X','\\\\n','g')
   return str
 endfu
-fu Rescape(str)
+fu Rescape(str,colNo)
   let str = a:str
   let str = substitute(str,'&','\\\\\&','g')
   let str = substitute(str,'|','\\\\|','g')
+  let pad = repeat(" ",Add(g:cols[:a:colNo]))
+  if g:multiline == 1
+    echo "ML"
+    let str = substitute(str,'\r',expand('\\r'.pad),'g')
+  else
+    echo "oneline"
+    let str = substitute(str,'\r','; ','g')
+  endif
   return str
 endfu
 
 fu Deslash(str)
   let str = a:str
+  let str = substitute(str,'\n','','g')
   let str = substitute(str,'\\','','g')
   let str = substitute(str,'\/','','g')
   let str = substitute(str,'&','','g')
@@ -79,7 +103,7 @@ function! Init()
   let g:sl2 = expand('\%Lr×'.len(varcol).'c')
   call EnterCols()
   call Status()
-  if line('$') > 40 | call SplitHeader() | endif
+  if line('$') > 440 | call SplitHeader() | endif
 endfunction
 
 fu! SplitHeader()
@@ -139,18 +163,29 @@ function! FitColumns()
   set conceallevel=0
 endfunction
 
+fu! GetCellOrigin()
+  let row = getcurpos()[1]
+  let col = getcurpos()[2]
+  let line = getline(row)
+  let line = line[:col]
+  while stridx(line,"\t") == -1 && row > 1
+    let row -= 1
+    let line = getline(row)
+  endwhile
+  return row
+endfu
 
 function! GetColStart(l,col)
   " returns at which characters column `col` [0,1,2..] starts
   let col   = 0
   let start = 0
   for l in a:l
-      if col < a:col
-        let start += 1
-      endif
-      if l == "\t"
-        let col += 1
-      endif
+    if col < a:col
+      let start += 1
+    endif
+    if l == "\t"
+      let col += 1
+    endif
   endfor
   return start
 endfunction
@@ -158,16 +193,12 @@ endfunction
 " Cell operations
 
 function! GetCellContent(row,colNo)
-  let line = getline(a:row)
-  let i   = 0
-  let tab = 0
-  while i < a:colNo
-      let i += 1
-      let tab += stridx(line[tab:], "\t")+1
-  endwhile
-  let content = line[tab:]
-  let tab = stridx(content, "\t")
-  return content[:tab]
+  " read between tabs
+  call GoRowCol(a:row,a:colNo)
+  noh
+  let @/="\t"
+  silent normal vn"cy
+  return @c
 endfunction
 
 
@@ -194,7 +225,7 @@ function! SetCellContent(row,colNo,content)
   else
     let line = pre.content.line[tab+1:]
   endif
-  let line = substitute(line, '/', '\\\\/', 'g')
+  let line = substitute(line,'\n','\\\\r','g')
   execute expand(a:row."s/.*/".line)
 endfunction
 
@@ -238,6 +269,7 @@ function! SwapCol(offset)
   let col = getcurpos()[4] "[4] > one char (unlike [2])
   let a = GetCurCol()+a:offset
   let b = a + 1
+  call CellCollapseAll()
 
   " linewise swap
   let lineNo = 1
@@ -271,7 +303,6 @@ function! SwapCol(offset)
   execute expand('set vartabstop='.ArrayString(g:cols))
   set syntax=tab
 endfunction
-
 fu! GetCurCol()
     "return the column number of current cursor
     let col   = getcurpos()[2]
@@ -366,24 +397,31 @@ function! PrevCol()
   call CellUntrim()
 endfunction
 
-fu! GoToCol(n)
-  normal 0
+fu! GoCol(n)
   let line = getline('.')
+  normal 0
   let c = 0
   let col = 0
   while col < a:n && col > -1
-    if line[c] == "\t" | let col += 1 | endif
-    let c += 1
-    normal l
-    if c > len(line) | let col = -1 | endif
+   if line[c] == "\t" | let col += 1 | endif
+   let c += 1
+   normal l
+   if c > len(line) | let col = -1 | endif
   endwhile
   return col
+endfu
+
+fu! GoRowCol(row,col)
+  execute expand("0,".a:row)
+  call GoCol(a:col)
 endfu
 
 function! NextCol()
   " find next tab or loop to col 0
   call CellTrim()
   let line = getline('.')
+  " ensure finishing tab to line
+  if line[-1:-1] != "\t" | s/$/\t/ | endif
   let col = getcurpos()[2]-1
   let tab = stridx(line[col:], "\t")+1
   if tab > 0
@@ -449,79 +487,91 @@ endfunction
 
 fu! CellTrim()
   " shorten to width and save content to file
-  let row = getcurpos()[1]
+  " find start of multiline cell
+  normal mc
+  let row = GetCellOrigin()
+  execute expand("normal ".row."G")
   let colNo = GetCurCol()
   let width = g:cols[colNo]
   let cell = GetCellContent(row,colNo)
   if len(cell) > width && match(cell,"<\\d\\+\\t") == -1
+    echo cell
     " cell is too wide and not collapsed > collapse
-    let col = GetCurCol()
     let width = width - 4
-    " let text = cell[:-2]
-    let text = split(cell,"\t")[0]
     let i = 1
-    while filereadable(".".Deslash(text[:width]).i)
+    while filereadable(".".Deslash(cell[:width]).i)
       let i+=1
     endwhile
     " Save full cell content and replace with filename
-    let fname = Deslash(text[:width])."<".i
-    let text = split(Escape(text),"\n")
+    let fname = Deslash(cell[:width])."<".i
+    let text = substitute(cell,'\n\s\+','\n','g')
+    let text = substitute(text,'; ','\n','g')
+    let text = split(text,"\n")
     call writefile(text,".".fname)
     execute expand("s/".Escape(cell)."/".fname."\t/")
-    call GoToCol(col)
+    " call GoCol(colNo)
   endif
+  normal `c
 endfu
 
 fu! CellUntrim()
   " Expand cell content from file
+  normal mu
   let row = getcurpos()[1]
   let colNo = GetCurCol()
   let cell = GetCellContent(row,colNo)
   if match(cell,"<\\d\\+\\t") > -1
-    let col = getcurpos()[4]
     let text  = join(readfile(".".cell[:-2]),"\r")
     silent! execute expand("!rm '.".cell[:-2]."'")
-    execute expand("s/".Escape(cell)."/".Rescape(text)."\t/")
-    execute expand(col.','.row)
+    execute expand("s/".Escape(cell)."/".Rescape(text,colNo)."/")
+    normal `u
   endif
   call Status()
 endfu
 
 
 fu! CellExpandAll()
+  let g:multiline = 0
+  let rowNo = getcurpos()[1]
+  let colNo = GetCurCol()
   let row = 1
   while row < line('$')
     let col = match(getline(row),"<\\d\\+\\t")
     while col > -1
-      let text = getline(row)
       execute expand("normal ".row."G0".col."l")
       call CellUntrim()
       let col = match(getline(row),"<\\d\\+\\t")
     endwhile
     let row += 1
   endwhile
+  call GoRowCol(rowNo,colNo)
+  let g:multiline = 1
 endfu
 
 fu! CellCollapseAll()
+  let rowNo = getcurpos()[1]
+  let colNo = GetCurCol()
   let row = 1
   while row < line('$')
     execute expand("normal ".row."G")
     let col = 0
-    while GoToCol(col) != -1
+    while GoCol(col) != -1
       call CellTrim()
-      echo "Row ".row."  Col ".col
       let col += 1
     endwhile
     let row += 1
   endwhile
+  call GoRowCol(rowNo,colNo)
 endfu
 
 fu! CellToggle()
   " trim call and save content / expand cell based on that content
+  normal mc
   let row = getcurpos()[1]
   let colNo = GetCurCol()
   let width = g:cols[colNo]
   let cell = GetCellContent(row,colNo)
+  normal `c
   if len(cell) > width
     call CellTrim()
   else
@@ -638,8 +688,9 @@ inoremap <TAB>   <TAB>
 " avoid editing trimmed cells
 " nnoremap i       :call CellUntrim()<CR>i
 " nnoremap a       :call CellUntrim()<CR>a
-nnoremap <buffer>k       :call CellTrim()<CR>k:call CellUntrim()<CR>
-nnoremap <buffer>j       :call CellTrim()<CR>j:call CellUntrim()<CR>
+"
+" nnoremap <buffer>k       :call CellTrim()<CR>k:call CellUntrim()<CR>
+" nnoremap <buffer>j       :call CellTrim()<CR>j:call CellUntrim()<CR>
 
 nnoremap <buffer><TAB>   :call NextCol()<CR>
 nnoremap <buffer><S-TAB> :call PrevCol()<CR>
@@ -676,5 +727,6 @@ nnoremap <buffer><C-,><C-,>  :call CellCollapseAll()<CR>
 nnoremap <buffer><leader>p  :!pandoc % -f tsv -t markdown -o %:r.md<CR>
 nnoremap <buffer><leader>,  :%s/\t/,/g<CR>
 " nnoremap <buffer><S-ENTER>  :terminal visidata %<CR>
+inoremap <buffer><S-ENTER>  <Enter>
 
 call Init()
