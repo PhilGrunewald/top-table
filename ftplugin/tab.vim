@@ -13,6 +13,7 @@ let g:cols = []
 
 " Only one column can be expanded (otherwise multiline is complicated)
 " To expand a different one, all others are collapsed first
+" -2: expand as one long line (\n = ;)
 let g:OpenCol = -1
 
 " ====================
@@ -54,7 +55,11 @@ fu Rescape(str,colNo)
   let str = substitute(str,'&','\\\\\&','g')
   let str = substitute(str,'|','\\\\|','g')
   let pad = repeat(" ",Add(g:cols[:a:colNo]))
-  let str = substitute(str,'\r',expand('\\r'.pad),'g')
+  if g:OpenCol == -2
+    let str = substitute(str,'\r',expand('; '),'g')
+  else
+    let str = substitute(str,'\r',expand('\\r'.pad),'g')
+  endif
   return str
 endfu
 
@@ -162,8 +167,10 @@ fu! GetCellOrigin()
   let row = getcurpos()[1]
   let col = getcurpos()[2]
   let line = getline(row)
-  let line = line[:col]
-  while stridx(line,"\t") == -1 && row > 1
+  " multiline in cols > 0 start with ' '
+  " multiline in col 0 has no tabs
+  " the last line in col 0 CANNOT be distinguished from a single line
+  while (line[0] == " " || stridx(line,"\t") == -1) && row > 1
     let row -= 1
     let line = getline(row)
   endwhile
@@ -283,12 +290,7 @@ function! SwapCol(offset)
   endwhile
 
   " return to cursor position in column
-  execute expand(col.','.row)
-  if a:offset < 0
-      call PrevCol()
-  else
-      call NextCol()
-  endif
+  call GoRowCol(row,b+a:offset)
 
   " swap column widths
   let w_a = g:cols[a]
@@ -298,6 +300,7 @@ function! SwapCol(offset)
   execute expand('set vartabstop='.ArrayString(g:cols))
   set syntax=tab
 endfunction
+
 fu! GetCurCol()
     "return the column number of current cursor
     let col   = getcurpos()[2]
@@ -377,7 +380,7 @@ endfunction
 
 function! PrevCol()
   " find tab on left. Stop at col 0
-  call CellTrim()
+  call CellCollapse()
   let line = getline('.')
   normal h
   let col = col('.')-1
@@ -389,7 +392,7 @@ function! PrevCol()
       normal l
     endif
   endwhile
-  call CellUntrim()
+  call CellExpand()
 endfunction
 
 fu! GoCol(n)
@@ -413,7 +416,7 @@ endfu
 
 function! NextCol()
   " find next tab or loop to col 0
-  call CellTrim()
+  call CellCollapse()
   let line = getline('.')
   " ensure finishing tab to line
   if line[-1:-1] != "\t" | s/$/\t/ | endif
@@ -424,14 +427,14 @@ function! NextCol()
   else
     execute expand('normal '.tab)
   endif
-  call CellUntrim()
+  call CellExpand()
   call Status()
 endfunction
 
 
 function! EnterDown()
   " go down one row or add when at bottom
-  call CellTrim()
+  call CellCollapse()
   if line('.') == line('$')
       normal o
   else
@@ -442,7 +445,6 @@ function! EnterDown()
       endif
   endif
   call Status()
-  echo "down"
 endfunction
 
 " Entry mode
@@ -477,15 +479,41 @@ endfunction
 
 
 " ====================
+"    Cell Yanking
+" ====================
+
+fu! CellYank(terminator)
+  let row = GetCellOrigin()
+  execute expand("normal ".row."G")
+  let colNo = GetCurCol()
+  let @+ = GetCellContent(row,colNo)
+  echo @+
+  if a:terminator == "\t" | let @+ = split(@+,"\t")[0] | endif
+  " let @+ = split(@+,a:terminator)[0]
+endfu
+
+fu! CellReplace(content)
+  " content = '': delete the cell or
+  " content = '\t': empty the cell
+  let row = GetCellOrigin()
+  execute expand("normal ".row."G")
+  let colNo = GetCurCol()
+  let @+ = GetCellContent(row,colNo)
+  if a:content == "\t" | let @+ = split(@+,"\t")[0] | endif
+  call SetCellContent(row,colNo,a:content)
+  call GoCol(colNo)
+endfu
+
+" ====================
 "    Text truncing
 " ====================
 
-fu! CellTrim()
+fu! CellCollapse()
   " shorten to width and save content to file
   " find start of multiline cell
-  normal mc
   let row = GetCellOrigin()
   execute expand("normal ".row."G")
+  " normal mc
   let colNo = GetCurCol()
   let width = g:cols[colNo]
   let cell = GetCellContent(row,colNo)
@@ -493,7 +521,7 @@ fu! CellTrim()
     " cell is too wide and not collapsed > collapse
     let width = width - 4
     let i = 1
-    while filereadable(".".Deslash(cell[:width]).i)
+    while filereadable(".".Deslash(cell[:width])."<".i)
       let i+=1
     endwhile
     " Save full cell content and replace with filename
@@ -504,11 +532,13 @@ fu! CellTrim()
     call writefile(text,".".fname)
     execute expand("s/".Escape(cell)."/".fname."\t/")
   endif
-  normal `c
+  call GoRowCol(row,colNo)
+  " silent normal `c
 endfu
 
-fu! CellUntrim()
+fu! CellExpand()
   " Expand cell content from file
+  " set textwidth=0
   normal mu
   let row = getcurpos()[1]
   let colNo = GetCurCol()
@@ -516,8 +546,10 @@ fu! CellUntrim()
   if match(cell,"<\\d\\+\\t") > -1
     let text  = join(readfile(".".cell[:-2]),"\r")
     silent! execute expand("!rm '.".cell[:-2]."'")
-    if g:OpenCol != colNo | call CellCollapseAll() | endif
-    let g:OpenCol = colNo
+    if g:OpenCol != -2 && g:OpenCol != colNo
+      call CellCollapseAll()
+      let g:OpenCol = colNo
+    endif
     execute expand("s/".Escape(cell)."/".Rescape(text,colNo)."/")
     normal `u
   endif
@@ -526,30 +558,33 @@ endfu
 
 
 fu! CellExpandAll()
+  let g:OpenCol = -2
   let rowNo = getcurpos()[1]
   let colNo = GetCurCol()
   let row = 1
-  while row < line('$')
-    let col = match(getline(row),"<\\d\\+\\t")
-    while col > -1
-      execute expand("normal ".row."G0".col."l")
-      call CellUntrim()
-      let col = match(getline(row),"<\\d\\+\\t")
+  while row <= line('$')
+    " let col = match(getline(row),"<\\d\\+\\t")
+    let col = 0
+    while GoCol(col) != -1
+      execute expand("normal ".row."G")
+      call CellExpand()
+      let col += 1
     endwhile
     let row += 1
   endwhile
   call GoRowCol(rowNo,colNo)
+  let g:OpenCol = -1
 endfu
 
 fu! CellCollapseAll()
   let rowNo = getcurpos()[1]
   let colNo = GetCurCol()
   let row = 1
-  while row < line('$')
+  while row <= line('$')
     execute expand("normal ".row."G")
     let col = 0
     while GoCol(col) != -1
-      call CellTrim()
+      call CellCollapse()
       let col += 1
     endwhile
     let row += 1
@@ -566,9 +601,9 @@ fu! CellToggle()
   let cell = GetCellContent(row,colNo)
   normal `c
   if len(cell) > width
-    call CellTrim()
+    call CellCollapse()
   else
-    call CellUntrim()
+    call CellExpand()
   endif
 endf
 
@@ -635,6 +670,7 @@ setlocal noexpandtab
 setlocal softtabstop=0
 setlocal nosmarttab 
 setlocal breakindent
+setlocal autoindent
 setlocal nowrap
 setlocal conceallevel=2
 setlocal concealcursor=n     "only expand in insert mode
@@ -679,11 +715,20 @@ inoremap <TAB>   <TAB>
 " ==============
 
 " avoid editing trimmed cells
-" nnoremap i       :call CellUntrim()<CR>i
-" nnoremap a       :call CellUntrim()<CR>a
-"
-" nnoremap <buffer>k       :call CellTrim()<CR>k:call CellUntrim()<CR>
-" nnoremap <buffer>j       :call CellTrim()<CR>j:call CellUntrim()<CR>
+nnoremap i       mc:call CellExpand()<CR>`ci
+nnoremap o   o<Tab><Esc>i
+nnoremap O   O<Tab><Esc>i
+" nnoremap a       :call CellExpand()<CR>a
+
+" nnoremap <buffer>k       :call CellCollapse()<CR>k:call CellExpand()<CR>
+" nnoremap <buffer>j       :call CellCollapse()<CR>j:call CellExpand()<CR>
+nnoremap <buffer>k       k:call CellExpand()<CR>
+nnoremap <buffer>j       j:call CellExpand()<CR>
+
+nnoremap <buffer>yat     :call CellYank("")<CR>
+nnoremap <buffer>yit     :call CellYank("\t")<CR>
+nnoremap <buffer>dat     :call CellReplace("")<CR>
+nnoremap <buffer>dit     :call CellReplace("\t")<CR>
 
 nnoremap <buffer><TAB>   :call NextCol()<CR>
 nnoremap <buffer><S-TAB> :call PrevCol()<CR>
@@ -720,6 +765,23 @@ nnoremap <buffer><C-,><C-,>  :call CellCollapseAll()<CR>
 nnoremap <buffer><leader>p  :!pandoc % -f tsv -t markdown -o %:r.md<CR>
 nnoremap <buffer><leader>,  :%s/\t/,/g<CR>
 " nnoremap <buffer><S-ENTER>  :terminal visidata %<CR>
-inoremap <buffer><S-ENTER>  <Enter>
+
+fu! Multiline()
+  " custom auto-indent without the tabs
+  " set noautoindent
+  normal mc
+  let row = GetCellOrigin()
+  execute expand("normal ".row."G")
+  let colNo = GetCurCol()
+  " execute expand("set textwidth=".Add(g:cols[:colNo+1]))
+  normal `c
+  let pad = repeat(" ",Add(g:cols[:colNo]))
+  normal o
+  execute expand("s/^/".pad."/")
+endfu
+
+inoremap <buffer><S-ENTER>  <ESC>:call Multiline()<CR>a
 
 call Init()
+" set formatoptions=jcroql
+" tcqj
