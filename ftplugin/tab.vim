@@ -16,6 +16,8 @@ let g:cols = []
 " -2: expand as one long line (\n = ;)
 let g:OpenCol = -1
 
+colorscheme desert
+
 " ====================
 "  Utility functions
 " ====================
@@ -68,6 +70,7 @@ fu Deslash(str)
   let str = substitute(str,'\n','','g')
   let str = substitute(str,'\\','','g')
   let str = substitute(str,'\/','','g')
+  let str = substitute(str,'\t','','g')
   let str = substitute(str,'&','','g')
   return str
 endfu
@@ -103,7 +106,7 @@ function! Init()
   let g:sl2 = expand('\%Lr×'.len(varcol).'c')
   call EnterCols()
   call Status()
-  if line('$') > 440 | call SplitHeader() | endif
+  if line('$') > 44 | call SplitHeader() | endif
 endfunction
 
 fu! SplitHeader()
@@ -195,73 +198,53 @@ endfunction
 " Cell operations
 
 function! GetCellContent(row,colNo)
-  " read between tabs
+  " read between tabs - including the trailing TAB
   call GoRowCol(a:row,a:colNo)
   noh
   let @/="\t"
   silent normal vn"cy
-  return @c
+  let content = @c
+  " empty cells begin with tab and would yank to next tab > cull
+  if content[0] == "\t" | let content = "\t" | endif
+  return content
 endfunction
 
 
 function! SetCellContent(row,colNo,content)
   " replace text between tabs with content
-  let content = a:content
-  let line = getline(a:row)
-  let i   = 0
-  let tab = 0
-  while i < a:colNo
-      let i += 1
-      let tab += stridx(line[tab:], "\t")+1
-  endwhile
-  if tab == 0
-      let pre = ''
-      let content = content
+  let new = a:content
+  let old = GetCellContent(a:row,a:colNo)
+  if old=="\t"
+    let tabs = repeat("\t[^\t]*",a:colNo-1)
+    execute expand(a:row."s/".tabs."\\\\zs\\\\t\\\\t\\\\ze/\\\\t".new)
   else
-      let pre = line[:tab-1]
+    let tabs = repeat("[^\t]*\t",a:colNo)
+    execute expand(a:row."s/".tabs."\\\\zs".old."\\\\ze/".new."/")
   endif
-
-  let tab += stridx(line[tab+1:], "\t")+1
-  if tab == 0
-    let line = pre.content
-  else
-    let line = pre.content.line[tab+1:]
-  endif
-  let line = substitute(line,'\n','\\\\r','g')
-  execute expand(a:row."s/.*/".line)
+  call GoCol(a:colNo)
 endfunction
 
 
-function! SwapCell(direction)
+function! SwapCell(dir)
   let row = getcurpos()[1]
-  let col = getcurpos()[4]
   let colNo = GetCurCol()
   let c1 = GetCellContent(row,colNo)
-  if a:direction == 'up' && row > 1
+  if a:dir == 'k' && row > 1
     let c2 = GetCellContent(row-1,colNo)
     call SetCellContent(row  ,colNo,c2)
     call SetCellContent(row-1,colNo,c1)
-    execute expand(col.','.(row-1))
-  endif
-  if a:direction == 'down' && row < line('$')
+  elseif a:dir == 'j' && row < line('$')
     let c2 = GetCellContent(row+1,colNo)
     call SetCellContent(row  ,colNo,c2)
     call SetCellContent(row+1,colNo,c1)
-    execute expand(col.','.(row+1))
-  endif
-  if a:direction == 'left' && colNo > 0
+  elseif a:dir == 'h' && colNo > 0
     let c2 = GetCellContent(row,colNo-1)
     call SetCellContent(row,colNo  ,c2)
     call SetCellContent(row,colNo-1,c1)
-    execute expand(col.','.row)
-    call PrevCol()
-  endif
-  if a:direction == 'right'
+  elseif a:dir == 'l'
     let c2 = GetCellContent(row,colNo+1)
     call SetCellContent(row,colNo  ,c2)
     call SetCellContent(row,colNo+1,c1)
-    execute expand(col.','.row)
-    call NextCol()
   endif
 endfunction
 
@@ -371,29 +354,13 @@ function! ColWidth(direction)
   " return to starting point
   execute expand(col.','.row)
   " move to next column
-  echo expand('Column '.(colNo+1)." now ".g:cols[colNo]." wide")    
+  echo expand('Column '.(colNo+1)." now ".g:cols[colNo]." wide")
   " redraws the conceals
   set syntax=tab
 endfunction
 
 " Cell navigation
 
-function! PrevCol()
-  " find tab on left. Stop at col 0
-  call CellCollapse()
-  let line = getline('.')
-  normal h
-  let col = col('.')-1
-  while col > 0
-    normal h
-    let col = col('.')-1
-    if line[col] == "\t"
-      let col = 0
-      normal l
-    endif
-  endwhile
-  call CellExpand()
-endfunction
 
 fu! GoCol(n)
   let line = getline('.')
@@ -415,39 +382,25 @@ fu! GoRowCol(row,col)
 endfu
 
 function! NextCol()
-  " find next tab or loop to col 0
   call CellCollapse()
-  let line = getline('.')
-  " ensure finishing tab to line
-  if line[-1:-1] != "\t" | s/$/\t/ | endif
-  let col = getcurpos()[2]-1
-  let tab = stridx(line[col:], "\t")+1
-  if tab > 0
-    execute expand('normal '.tab.'l')
-  else
-    execute expand('normal '.tab)
-  endif
+  call GoCol(GetCurCol()+1)
   call CellExpand()
-  call Status()
 endfunction
 
-
-function! EnterDown()
-  " go down one row or add when at bottom
+function! PrevCol()
   call CellCollapse()
-  if line('.') == line('$')
-      normal o
-  else
-      if col('.') == 1
-          normal j
-      else
-          normal lj
-      endif
-  endif
-  call Status()
+  call GoCol(GetCurCol()-1)
+  call CellExpand()
 endfunction
 
 " Entry mode
+
+function! EnterDown()
+  " go down one row or add when at bottom
+  normal jl
+  call Status()
+endfunction
+
 
 function! EnterRows()
   " in insert mode, <ENTER> advances to the right
@@ -482,14 +435,11 @@ endfunction
 "    Cell Yanking
 " ====================
 
-fu! CellYank(terminator)
+fu! CellYank()
   let row = GetCellOrigin()
   execute expand("normal ".row."G")
   let colNo = GetCurCol()
   let @+ = GetCellContent(row,colNo)
-  echo @+
-  if a:terminator == "\t" | let @+ = split(@+,"\t")[0] | endif
-  " let @+ = split(@+,a:terminator)[0]
 endfu
 
 fu! CellReplace(content)
@@ -499,7 +449,6 @@ fu! CellReplace(content)
   execute expand("normal ".row."G")
   let colNo = GetCurCol()
   let @+ = GetCellContent(row,colNo)
-  if a:content == "\t" | let @+ = split(@+,"\t")[0] | endif
   call SetCellContent(row,colNo,a:content)
   call GoCol(colNo)
 endfu
@@ -513,13 +462,12 @@ fu! CellCollapse()
   " find start of multiline cell
   let row = GetCellOrigin()
   execute expand("normal ".row."G")
-  " normal mc
   let colNo = GetCurCol()
-  let width = g:cols[colNo]
+  if colNo < len(g:cols) | let width=g:cols[colNo] | else | let width=30 | endif
   let cell = GetCellContent(row,colNo)
   if len(cell) > width && match(cell,"<\\d\\+\\t") == -1
     " cell is too wide and not collapsed > collapse
-    let width = width - 4
+    if width > 6 | let width = width - 4 | endif
     let i = 1
     while filereadable(".".Deslash(cell[:width])."<".i)
       let i+=1
@@ -533,26 +481,24 @@ fu! CellCollapse()
     execute expand("s/".Escape(cell)."/".fname."\t/")
   endif
   call GoRowCol(row,colNo)
-  " silent normal `c
 endfu
 
 fu! CellExpand()
   " Expand cell content from file
-  " set textwidth=0
   normal mu
   let row = getcurpos()[1]
   let colNo = GetCurCol()
   let cell = GetCellContent(row,colNo)
   if match(cell,"<\\d\\+\\t") > -1
-    let text  = join(readfile(".".cell[:-2]),"\r")
+    let text  = join(readfile(".".Deslash(cell)),"\r")
     silent! execute expand("!rm '.".cell[:-2]."'")
     if g:OpenCol != -2 && g:OpenCol != colNo
       call CellCollapseAll()
       let g:OpenCol = colNo
     endif
     execute expand("s/".Escape(cell)."/".Rescape(text,colNo)."/")
-    normal `u
   endif
+  normal `u
   call Status()
 endfu
 
@@ -679,25 +625,23 @@ setlocal concealcursor=n     "only expand in insert mode
 "  Commands
 " ==============
 
-command! Help     :h vi-shing-table
+command! Help     :h top-table-keys
 
 " Entry mode: downwards or sidewards
-command! InCols   :call EnterCols()
-command! InRows   :call EnterRows()
+command! ColWise   :call EnterCols()
+command! RowsWise   :call EnterRows()
 
 " Column sizing
 command! Fit         :call FitColumns()
 command! Fix         :call FixColumns()
-command! TabExpand   :call CellExpandAll()<CR>
-command! TabCollapse :call CellCollapseAll()<CR>
+command! ExpandCells   :call CellExpandAll()<CR>
+command! CollapseCells :call CellCollapseAll()<CR>
 
 " Calculations
 command! Increment :call Increment()
 command! Sum      :call Calc('sum')
 command! Avg      :call Calc('avg')
 
-" Edit external
-command! Visidata :terminal visidata %
 
 " ====================
 "     Mappings
@@ -715,20 +659,13 @@ inoremap <TAB>   <TAB>
 " ==============
 
 " avoid editing trimmed cells
-nnoremap i       mc:call CellExpand()<CR>`ci
-nnoremap o   o<Tab><Esc>i
+nnoremap i   mc:call CellExpand()<CR>`ci
 nnoremap O   O<Tab><Esc>i
-" nnoremap a       :call CellExpand()<CR>a
+nmap <buffer>k       k:call CellExpand()<CR>
+nmap <buffer>j       j:call CellExpand()<CR>
 
-" nnoremap <buffer>k       :call CellCollapse()<CR>k:call CellExpand()<CR>
-" nnoremap <buffer>j       :call CellCollapse()<CR>j:call CellExpand()<CR>
-nnoremap <buffer>k       k:call CellExpand()<CR>
-nnoremap <buffer>j       j:call CellExpand()<CR>
-
-nnoremap <buffer>yat     :call CellYank("")<CR>
-nnoremap <buffer>yit     :call CellYank("\t")<CR>
-nnoremap <buffer>dat     :call CellReplace("")<CR>
-nnoremap <buffer>dit     :call CellReplace("\t")<CR>
+nnoremap <buffer>yc     :call CellYank()<CR>
+nnoremap <buffer>dc     :call CellReplace("\t")<CR>
 
 nnoremap <buffer><TAB>   :call NextCol()<CR>
 nnoremap <buffer><S-TAB> :call PrevCol()<CR>
@@ -739,15 +676,17 @@ nnoremap <Down> ddp
 vnoremap <Up> xkP`[V`]
 vnoremap <Down> xp`[V`]
 
-" Column swapping
-nnoremap <buffer><C-RIGHT>  :call SwapCol(0)<CR>
-nnoremap <buffer><C-LEFT>   :call SwapCol(-1)<CR>
+" Column/Row swapping
+nnoremap <buffer><C-k>  gkmcgjddkP`cgk
+nnoremap <buffer><C-j>  gjmcgkddp`cgj
+nnoremap <buffer><C-l>  :call SwapCol(0)<CR>
+nnoremap <buffer><C-h>   :call SwapCol(-1)<CR>
 
 " Cell swapping
-nnoremap <buffer>K  :call SwapCell('up')<CR>
-nnoremap <buffer>J  :call SwapCell('down')<CR>
-nnoremap <buffer>H  :call SwapCell('left')<CR>
-nnoremap <buffer>L  :call SwapCell('right')<CR>
+nnoremap <buffer>ck  :call SwapCell('k')<CR>
+nnoremap <buffer>cj  :call SwapCell('j')<CR>
+nnoremap <buffer>ch  :call SwapCell('h')<CR>
+nnoremap <buffer>cl  :call SwapCell('l')<CR>
 
 " Column sizing
 nnoremap <buffer><S-Right>  :call ColWidth('+')<CR>
@@ -764,24 +703,20 @@ nnoremap <buffer><C-,><C-,>  :call CellCollapseAll()<CR>
 " Turn to markdown
 nnoremap <buffer><leader>p  :!pandoc % -f tsv -t markdown -o %:r.md<CR>
 nnoremap <buffer><leader>,  :%s/\t/,/g<CR>
-" nnoremap <buffer><S-ENTER>  :terminal visidata %<CR>
 
 fu! Multiline()
   " custom auto-indent without the tabs
-  " set noautoindent
-  normal mc
+  normal mca<++>
   let row = GetCellOrigin()
   execute expand("normal ".row."G")
   let colNo = GetCurCol()
-  " execute expand("set textwidth=".Add(g:cols[:colNo+1]))
   normal `c
   let pad = repeat(" ",Add(g:cols[:colNo]))
-  normal o
-  execute expand("s/^/".pad."/")
+  execute expand("s/<++>/\r".pad."<i>/")
+  normal va<c
 endfu
 
-inoremap <buffer><S-ENTER>  <ESC>:call Multiline()<CR>a
+inoremap <buffer><S-Enter>  <ESC>:call Multiline()<CR>a
+
 
 call Init()
-" set formatoptions=jcroql
-" tcqj
