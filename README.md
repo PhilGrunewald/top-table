@@ -54,14 +54,14 @@ left,below,above or right. The cursor stays with the cell as it moves.
 
 (normal mode)
 
-Normal `hjkl` with <Carl> moves (bubbles) rows up/down and columns left/right.
+Normal `hjkl` with `<Ctrl>` moves (bubbles) rows up/down and columns left/right.
 
-            <C-k>
+            `<C-k>`
              up
 
-   <C-h>  `Row/Column`  <C-l>
+   `<C-h>`  `Row/Column`  `<C-l>`
    left               right
-            <C-j>
+            `<C-j>`
             down
 
 *ResizeColumn*
@@ -162,8 +162,8 @@ Prior to V2.0 the shortening of cells was achieved with Conceal characters.
 However, these were unreliable for consistent tabular widths.
 
 
+2. Key bindings
 ====================================================================
-2. Key bindings                                       *top-table-keys*
 
 Key (normal)
 -------------
@@ -204,7 +204,7 @@ Key (insert)
   `<Enter>`        Advance to next row/column (see |Entry-mode|)
 
 
-3. Commands                                       *top-table-commands*
+3. Commands
 ====================================================================
 
 - *Help*           open this file in split view
@@ -220,11 +220,11 @@ Key (insert)
 - *ColWise*        <ENTER> advances to the next column
 - *RowWise*        <ENTER> advances to the next row
 
-4. Revision history                              *top-table-revisions*
+4. Revision history
 ====================================================================
 
 - 09 May 23   v3.0   Phil Grunewald      Multi-line support and bug fixes
-- 05 May 23   v2.1   Phil Grunewald      LeftRight with <S> and <C> to save
+- 05 May 23   v2.1   Phil Grunewald      LeftRight with `<S>` and `<C>` to save
 - buffer cycling behaviour
 - 04 May 23   v2.0   Phil Grunewald      Save hidden text to hidden files
 - 22 Apr 23   v1.1   Phil Grunewald      Column sums / avg

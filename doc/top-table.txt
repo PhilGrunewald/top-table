@@ -48,14 +48,14 @@ left,below,above or right. The cursor stays with the cell as it moves.
 *MoveRow* and *MoveColumn*
 (normal mode)
 
-Normal `hjkl` with <Carl> moves (bubbles) rows up/down and columns left/right.
+Normal `hjkl` with `<Ctrl>` moves (bubbles) rows up/down and columns left/right.
 
-            <C-k>
+            `<C-k>`
              up
 
-   <C-h>  `Row/Column`  <C-l>
+   `<C-h>`  `Row/Column`  `<C-l>`
    left               right
-            <C-j>
+            `<C-j>`
             down
 
 *ResizeColumn*
