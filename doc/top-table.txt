@@ -205,6 +205,15 @@ Key (insert)
 ====================================================================
 4. Revision history                              *top-table-revisions*
 
+09 May 23   v3.1   Phil Grunewald
+
+- Undo block when expanding, otherwise the removed file is
+- EnterDown alignment fix
+- Cursor column highlighting
+- neater NextCol
+- Header split as command
+- Backup command
+
 09 May 23   v3.0   Phil Grunewald      Multi-line support and bug fixes
 05 May 23   v2.1   Phil Grunewald      LeftRight with <S> and <C> to save
 buffer cycling behaviour

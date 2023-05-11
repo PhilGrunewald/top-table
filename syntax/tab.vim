@@ -1,3 +1,6 @@
+highlight CursorLine    ctermbg=22
+highlight CursorColumn  ctermbg=17
+
 highlight Conceal     ctermfg=green  ctermbg=none
 highlight NonText     ctermfg=black  ctermbg=none
 highlight SpareSpace  ctermfg=black  cterm=underline
@@ -17,8 +20,7 @@ highlight Header      ctermfg=white  cterm=bold,underline
 "   let col += 1
 " endwhile
 
-syntax match CellOpened     /\zs>\d\+\ze\t/ conceal cchar=✓
+" syntax match Header     /\%1l.*/
 syntax match CellCollapsed  /\zs<\d\+\ze\t/ conceal cchar=…
-syntax match Header     /\%1l.*/
 syntax match SpareSpace / \+\t/
 

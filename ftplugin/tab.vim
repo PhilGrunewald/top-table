@@ -1,4 +1,5 @@
 set listchars=tab:▸\       "show tabs as little arrows ,eol:¬
+set cursorline
 
 " ====================
 "  Global variables
@@ -16,7 +17,7 @@ let g:cols = []
 " -2: expand as one long line (\n = ;)
 let g:OpenCol = -1
 
-colorscheme desert
+" colorscheme desert
 
 " ====================
 "  Utility functions
@@ -106,21 +107,23 @@ function! Init()
   let g:sl2 = expand('\%Lr×'.len(varcol).'c')
   call EnterCols()
   call Status()
-  if line('$') > 44 | call SplitHeader() | endif
 endfunction
 
-fu! SplitHeader()
+fu! Header()
   " Header split with sync scrolling
   highlight VertSplit   ctermfg=DarkGreen    ctermbg=black  cterm=NONE
   wincmd o
   set scrollbind
   split
   set scrollbind
-  set scrollopt-=ver
+  set scrollopt=hor
+  normal gg
   resize 1
   wincmd j
-  " move second line to top
-  normal jzt
+  if line('.') == 1
+    " move second line to top
+    normal jzt
+  endif
 endfu
 
 function! Status()
@@ -147,23 +150,21 @@ function! FitColumns()
   " size each column to its maximum width
   let l = 1
   while l <= line('$')
-    let line = getline(l)
     let colNo = 0
-    let wcol = 0
-    for c in line
-      let wcol += 1
-      if c == "\t"
-        if wcol > g:cols[colNo]
-          let g:cols[colNo] = wcol
-        endif
-        let wcol   = 0
-        let colNo += 1
+    while GoCol(colNo) > -1
+      if colNo > len(g:cols)
+        let g:cols = g:cols + [10]
       endif
-    endfor
+      let width = len(GetCellContent(l,colNo))
+      if width > g:cols[colNo]
+        let g:cols[colNo] = width
+      endif
+      let colNo += 1
+    endwhile
     let l += 1
   endwhile
   execute expand('set vartabstop='.ArrayString(g:cols))
-  set conceallevel=0
+  " set conceallevel=0
 endfunction
 
 fu! GetCellOrigin()
@@ -254,7 +255,7 @@ function! SwapCol(offset)
   let col = getcurpos()[4] "[4] > one char (unlike [2])
   let a = GetCurCol()+a:offset
   let b = a + 1
-  call CellCollapseAll()
+  call CollapseCells()
 
   " linewise swap
   let lineNo = 1
@@ -361,19 +362,26 @@ endfunction
 
 " Cell navigation
 
-
 fu! GoCol(n)
-  let line = getline('.')
+  " move n tabs, return colNo or -1 if on new line
+  let n = a:n
+  let line = line('.')
   normal 0
-  let c = 0
-  let col = 0
-  while col < a:n && col > -1
-   if line[c] == "\t" | let col += 1 | endif
-   let c += 1
-   normal l
-   if c > len(line) | let col = -1 | endif
-  endwhile
-  return col
+  noh
+  let @/="\t"
+  if n > 0
+    if getline('.')[0] == "\t"
+      let n -= 1
+    endif
+    if n > 0
+      silent execute expand("normal ".n."n")
+    endif
+    normal l
+  endif
+  if line != line('.')
+    return -1
+  endif
+  return a:n
 endfu
 
 fu! GoRowCol(row,col)
@@ -382,22 +390,34 @@ fu! GoRowCol(row,col)
 endfu
 
 function! NextCol()
-  call CellCollapse()
+  if line('.') == line('$')
+    normal o
+    execute expand("normal ".line('$')-1."G")
+  endif
   call GoCol(GetCurCol()+1)
   call CellExpand()
+  set cursorcolumn
 endfunction
 
 function! PrevCol()
-  call CellCollapse()
   call GoCol(GetCurCol()-1)
   call CellExpand()
+  set cursorcolumn
 endfunction
 
 " Entry mode
 
 function! EnterDown()
   " go down one row or add when at bottom
-  normal jl
+  if line('.') == line('$')
+    normal o
+  else
+    if getline('.')[getcurpos()[2]-1] == "\t"
+      normal jl
+    else
+      normal j
+    endif
+  endif
   call Status()
 endfunction
 
@@ -485,6 +505,7 @@ endfu
 
 fu! CellExpand()
   " Expand cell content from file
+  let &undolevels=-1
   normal mu
   let row = getcurpos()[1]
   let colNo = GetCurCol()
@@ -493,26 +514,27 @@ fu! CellExpand()
     let text  = join(readfile(".".Deslash(cell)),"\r")
     silent! execute expand("!rm '.".cell[:-2]."'")
     if g:OpenCol != -2 && g:OpenCol != colNo
-      call CellCollapseAll()
+      call CollapseCells()
       let g:OpenCol = colNo
     endif
     execute expand("s/".Escape(cell)."/".Rescape(text,colNo)."/")
   endif
   normal `u
   call Status()
+  set nocursorcolumn
+  let &undolevels=1000
 endfu
 
 
-fu! CellExpandAll()
+fu! ExpandCells()
   let g:OpenCol = -2
   let rowNo = getcurpos()[1]
   let colNo = GetCurCol()
   let row = 1
   while row <= line('$')
-    " let col = match(getline(row),"<\\d\\+\\t")
+    execute expand("normal ".row."G")
     let col = 0
     while GoCol(col) != -1
-      execute expand("normal ".row."G")
       call CellExpand()
       let col += 1
     endwhile
@@ -522,7 +544,7 @@ fu! CellExpandAll()
   let g:OpenCol = -1
 endfu
 
-fu! CellCollapseAll()
+fu! CollapseCells()
   let rowNo = getcurpos()[1]
   let colNo = GetCurCol()
   let row = 1
@@ -552,6 +574,19 @@ fu! CellToggle()
     call CellExpand()
   endif
 endf
+
+fu! Multiline()
+  " custom auto-indent without the tabs
+  normal mca<++>
+  let row = GetCellOrigin()
+  execute expand("normal ".row."G")
+  let colNo = GetCurCol()
+  normal `c
+  let pad = repeat(" ",Add(g:cols[:colNo]))
+  execute expand("s/<++>/\r".pad."<i>/")
+  normal va<c
+endfu
+
 
 
 " ====================
@@ -598,6 +633,17 @@ function! Calc(operand)
 endfunction
 
 " ====================
+"     Backup
+" ====================
+
+fu! Backup()
+  let original = expand("%")
+  call ExpandCells()
+  execute "!cp ".original." ".original."le"
+  call CollapseCells()
+endfu
+
+" ====================
 "     Settings
 " ====================
 
@@ -626,6 +672,8 @@ setlocal concealcursor=n     "only expand in insert mode
 " ==============
 
 command! Help     :h top-table-keys
+command! Header   :call Header()
+command! Backup   :call Backup()
 
 " Entry mode: downwards or sidewards
 command! ColWise   :call EnterCols()
@@ -634,8 +682,8 @@ command! RowsWise   :call EnterRows()
 " Column sizing
 command! Fit         :call FitColumns()
 command! Fix         :call FixColumns()
-command! ExpandCells   :call CellExpandAll()<CR>
-command! CollapseCells :call CellCollapseAll()<CR>
+command! ExpandCells   :call ExpandCells()<CR>
+command! CollapseCells :call CollapseCells()<CR>
 
 " Calculations
 command! Increment :call Increment()
@@ -697,26 +745,13 @@ nnoremap <buffer>++        :call Increment()<CR>
 nnoremap <buffer>==        :call Calc('sum')<CR>
 
 nnoremap <buffer>>>          :call CellToggle()<CR>
-nnoremap <buffer><C-.><C-.>  :call CellExpandAll()<CR>
-nnoremap <buffer><C-,><C-,>  :call CellCollapseAll()<CR>
+nnoremap <buffer><C-.><C-.>  :call ExpandCells()<CR>
+nnoremap <buffer><C-,><C-,>  :call CollapseCells()<CR>
 
 " Turn to markdown
 nnoremap <buffer><leader>p  :!pandoc % -f tsv -t markdown -o %:r.md<CR>
 nnoremap <buffer><leader>,  :%s/\t/,/g<CR>
 
-fu! Multiline()
-  " custom auto-indent without the tabs
-  normal mca<++>
-  let row = GetCellOrigin()
-  execute expand("normal ".row."G")
-  let colNo = GetCurCol()
-  normal `c
-  let pad = repeat(" ",Add(g:cols[:colNo]))
-  execute expand("s/<++>/\r".pad."<i>/")
-  normal va<c
-endfu
-
 inoremap <buffer><S-Enter>  <ESC>:call Multiline()<CR>a
-
 
 call Init()
