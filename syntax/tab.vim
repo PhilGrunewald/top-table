@@ -1,5 +1,6 @@
-highlight CursorLine    ctermbg=22
+highlight CursorLine    ctermbg=235
 highlight CursorColumn  ctermbg=17
+highlight OpenEnd       ctermbg=238
 
 highlight Conceal     ctermfg=green  ctermbg=none
 highlight NonText     ctermfg=black  ctermbg=none
@@ -23,4 +24,5 @@ highlight Header      ctermfg=white  cterm=bold,underline
 " syntax match Header     /\%1l.*/
 syntax match CellCollapsed  /\zs<\d\+\ze\t/ conceal cchar=…
 syntax match SpareSpace / \+\t/
+syntax match OpenEnd /[^\t]\+$/
 

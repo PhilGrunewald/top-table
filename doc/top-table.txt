@@ -124,11 +124,11 @@ NOTE Only one column can be opened at any one time.
 Otherwise mulitiline entries also need delimiters - possible, but we want to keep things simple.
 
 *Increment*  `++`     insert sequential numbers for all columns 
-                       below the current one. If a numeric value is present,
-                       the sequence starts with that number.
+                  below the current one. If a numeric value is present,
+                  the sequence starts with that number.
 
-*Sum*             `==`     Adds all numerical values above this cell
-                       Inserts the result.
+*Sum*        `==`     Adds all numerical values above this cell
+                  Inserts the result.
 
 CONVENTIONS
 
@@ -138,8 +138,11 @@ CONVENTIONS
 
 WARNING
 When saving the file with collapsed cells, the hidden files must be kept with
-the main file for the content to be restored. It is advisable to |TabExpand|
-all cells before saving the file.
+the main file for the content to be restored. It is advisable to |ExpandCells|
+before saving the file (see |Backup|).
+The file behind a collapsed cell is cleaned up (deleted) when the cell is
+expanded. To avoid inadvertent data loss, the `undolevels` history is reset
+(collapsing the cell again via `undo` could not restore that file).
 
 NOTE
 Prior to V2.0 the shortening of cells was achieved with Conceal characters.
@@ -163,6 +166,13 @@ Key (normal)
   `yc`             yank cell
   `dc`             delete cell content
                  yank register includes trailing <Tab>
+
+  `dd`             delete row
+  `DD`             |DeleteColumn|
+  `<C-i>`          |InsertColumn| left
+  `<C-I>`          |AddColumn| right
+  `O`              insert row above
+  `o`              insert row below
 
   `<C-l>`          |MoveColumn| right
   `<C-h>`          |MoveColumn| left
@@ -189,37 +199,55 @@ Key (insert)
 ====================================================================
 3. Commands                                       *top-table-commands*
 
-*Help*           open this file in split view
-|Increment|      fill column with incremental numbers
-|Sum|            insert the sum of all numerical values in column above this row
-*Avg*            insert the average of all numerical values in column above this row
-*Fit*            size columns to longest element
-*Fix*            size columns to 10 wide
-|ExpandCells|    Expand all cells to display their full content
-|CollapseCells|  Shorten all cells to fit within their columns
+- *Help*           open this file in split view
+- *Backup*         save a fully expanded copy with `.table` extension
+- *Header*         split window to show header row fixed to top
+- *InsertColumn*   Insert a blank column left of the current column
+- *AddColumn*      Insert a blank column to the right
+- *DeleteColumn*   Delete current column
 
-*Entry-mode* (in insert mode)
-*ColWise*        <ENTER> advances to the next column
-*RowWise*        <ENTER> advances to the next row
+- |Increment|      add incremental numbers for all cells below this one
+- |Sum|            insert the sum of all numerical values above this cell
+- *Avg*            insert the average of all numerical values in column above this row
+- *Fit*            size columns to longest element
+- *Fix*            size columns to 10 wide
+- |ExpandCells|    Expand all cells to display their full content
+- |CollapseCells|  Shorten all cells to fit within their columns
+
+- *Entry-mode* (in insert mode)
+- *ColWise*        <ENTER> advances to the next column
+- *RowWise*        <ENTER> advances to the next row
 
 ====================================================================
 4. Revision history                              *top-table-revisions*
 
-09 May 23   v3.1   Phil Grunewald
+11 May 23   v3.2   Phil Grunewald
 
-- Undo block when expanding, otherwise the removed file is
-- EnterDown alignment fix
-- Cursor column highlighting
-- neater NextCol
-- Header split as command
-- Backup command
+    - |InsertColumn| / |DeleteColumn|
+    - undo reset
+    - first pieces of error handling (missing end <Tab>)
+    - fix line breaks with NextCell
+    - fix |Fit| end of row recognition
+
+10 May 23   v3.1   Phil Grunewald
+
+    - Undo block when expanding, otherwise the removed file is
+    - EnterDown alignment fix
+    - Cursor column highlighting
+    - neater NextCol
+    - Header split as command
+    - Backup command
 
 09 May 23   v3.0   Phil Grunewald      Multi-line support and bug fixes
-05 May 23   v2.1   Phil Grunewald      LeftRight with <S> and <C> to save
-buffer cycling behaviour
+
+05 May 23   v2.1   Phil Grunewald      LeftRight with <S> and <C> to save buffer cycling behaviour
+
 04 May 23   v2.0   Phil Grunewald      Save hidden text to hidden files
+
 22 Apr 23   v1.1   Phil Grunewald      Column sums / avg
+
 21 Apr 23   v1.0   Phil Grunewald      Auto comma conversion
+
 20 Apr 23   v0.1   Phil Grunewald      Initial version with helpfile
 
 

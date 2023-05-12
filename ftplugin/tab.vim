@@ -1,9 +1,13 @@
 set listchars=tab:▸\       "show tabs as little arrows ,eol:¬
 set cursorline
+set nowrap
 
 " ====================
 "  Global variables
 " ====================
+
+" for vi-si-weg plugin
+let g:TagExtension = ""
 
 " status line sections
 let g:sl1 = "%f%="
@@ -53,8 +57,11 @@ fu Escape(str)
   " let str = substitute(str,'X','\\\\n','g')
   return str
 endfu
+
 fu Rescape(str,colNo)
   let str = a:str
+  let str = substitute(str,'\','\\\\\\','g')
+  let str = substitute(str,'/','\\\\\/','g')
   let str = substitute(str,'&','\\\\\&','g')
   let str = substitute(str,'|','\\\\|','g')
   let pad = repeat(" ",Add(g:cols[:a:colNo]))
@@ -68,17 +75,18 @@ endfu
 
 fu Deslash(str)
   let str = a:str
+  let str = substitute(str,'\t','','g')
   let str = substitute(str,'\n','','g')
   let str = substitute(str,'\\','','g')
   let str = substitute(str,'\/','','g')
-  let str = substitute(str,'\t','','g')
   let str = substitute(str,'&','','g')
   return str
 endfu
+
+
 " ====================
 "      Functions
 " ====================
-
 
 function! Init()
   " set column widths
@@ -101,7 +109,6 @@ function! Init()
         let wcol = 0
       endif
   endfor
-  let varcol += [20]
   execute expand('let g:cols=['.ArrayString(varcol).']')
   execute expand('set vartabstop='.ArrayString(g:cols))
   let g:sl2 = expand('\%Lr×'.len(varcol).'c')
@@ -111,6 +118,7 @@ endfunction
 
 fu! Header()
   " Header split with sync scrolling
+  normal mc
   highlight VertSplit   ctermfg=DarkGreen    ctermbg=black  cterm=NONE
   wincmd o
   set scrollbind
@@ -120,10 +128,7 @@ fu! Header()
   normal gg
   resize 1
   wincmd j
-  if line('.') == 1
-    " move second line to top
-    normal jzt
-  endif
+  normal ggjzt`c
 endfu
 
 function! Status()
@@ -151,8 +156,8 @@ function! FitColumns()
   let l = 1
   while l <= line('$')
     let colNo = 0
-    while GoCol(colNo) > -1
-      if colNo > len(g:cols)
+    while GoCol(colNo+1) > GoCol(colNo)
+      if colNo >= len(g:cols)
         let g:cols = g:cols + [10]
       endif
       let width = len(GetCellContent(l,colNo))
@@ -166,6 +171,44 @@ function! FitColumns()
   execute expand('set vartabstop='.ArrayString(g:cols))
   " set conceallevel=0
 endfunction
+
+fu! InsertColumn(shift)
+  let colNo = GetCurCol()+a:shift
+  let line = 0
+  while line < line('$')
+    let line += 1
+    exe expand("normal ".line."G")
+    call GoCol(colNo)
+    normal i	
+  endwhile
+  if colNo > 0
+    let g:cols = g:cols[:colNo-1] + [5] + g:cols[colNo:]
+  else
+    let g:cols = [10] + g:cols
+  endif
+  execute expand('set vartabstop='.ArrayString(g:cols))
+endfu
+
+fu! DeleteColumn()
+  let colNo = GetCurCol()
+  let line = 0
+  while line < line('$')
+    let line += 1
+    exe expand("normal ".line."G")
+    call GoCol(colNo)
+    if getline('.')[getcurpos()[2]-1] == "\t"
+      normal x
+    else
+      normal dt	
+    endif
+  endwhile
+  if colNo > 0
+    let g:cols = g:cols[:colNo-1]+ g:cols[colNo+1:]
+  else
+    let g:cols = g:cols[1:]
+  endif
+  execute expand('set vartabstop='.ArrayString(g:cols))
+endfu
 
 fu! GetCellOrigin()
   let row = getcurpos()[1]
@@ -203,7 +246,7 @@ function! GetCellContent(row,colNo)
   call GoRowCol(a:row,a:colNo)
   noh
   let @/="\t"
-  silent normal vn"cy
+  silent! normal vn"cy
   let content = @c
   " empty cells begin with tab and would yank to next tab > cull
   if content[0] == "\t" | let content = "\t" | endif
@@ -217,10 +260,18 @@ function! SetCellContent(row,colNo,content)
   let old = GetCellContent(a:row,a:colNo)
   if old=="\t"
     let tabs = repeat("\t[^\t]*",a:colNo-1)
-    execute expand(a:row."s/".tabs."\\\\zs\\\\t\\\\t\\\\ze/\\\\t".new)
+    try
+      execute expand(a:row."s/".tabs."\\\\zs\\\\t\\\\t\\\\ze/\\\\t".new)
+    catch
+      echo "[top-table] WARNING: check all columns are closed with tabs"
+    endtry
   else
     let tabs = repeat("[^\t]*\t",a:colNo)
-    execute expand(a:row."s/".tabs."\\\\zs".old."\\\\ze/".new."/")
+    try
+      execute expand(a:row."s/".tabs."\\\\zs".old."\\\\ze/".new."/")
+    catch
+      echo "[top-table] WARNING: check all columns are closed with tabs"
+    endtry
   endif
   call GoCol(a:colNo)
 endfunction
@@ -374,7 +425,7 @@ fu! GoCol(n)
       let n -= 1
     endif
     if n > 0
-      silent execute expand("normal ".n."n")
+      silent! execute expand("normal ".n."n")
     endif
     normal l
   endif
@@ -391,10 +442,14 @@ endfu
 
 function! NextCol()
   if line('.') == line('$')
-    normal o
-    execute expand("normal ".line('$')-1."G")
+    normal o	
+    execute expand("normal ".(line('$')-1)."G")
   endif
-  call GoCol(GetCurCol()+1)
+  let colNo = GetCurCol()
+  call GoCol(colNo+1)
+  if  colNo == GetCurCol()
+    normal j0
+  endif
   call CellExpand()
   set cursorcolumn
 endfunction
@@ -410,7 +465,7 @@ endfunction
 function! EnterDown()
   " go down one row or add when at bottom
   if line('.') == line('$')
-    normal o
+    normal o	
   else
     if getline('.')[getcurpos()[2]-1] == "\t"
       normal jl
@@ -455,14 +510,14 @@ endfunction
 "    Cell Yanking
 " ====================
 
-fu! CellYank()
+fu! YankCell()
   let row = GetCellOrigin()
   execute expand("normal ".row."G")
   let colNo = GetCurCol()
   let @+ = GetCellContent(row,colNo)
 endfu
 
-fu! CellReplace(content)
+fu! ReplaceCell(content)
   " content = '': delete the cell or
   " content = '\t': empty the cell
   let row = GetCellOrigin()
@@ -496,6 +551,7 @@ fu! CellCollapse()
     let fname = Deslash(cell[:width])."<".i
     let text = substitute(cell,'\n\s\+','\n','g')
     let text = substitute(text,'; ','\n','g')
+    let text = substitute(text,'\t','','g')
     let text = split(text,"\n")
     call writefile(text,".".fname)
     execute expand("s/".Escape(cell)."/".fname."\t/")
@@ -511,13 +567,18 @@ fu! CellExpand()
   let colNo = GetCurCol()
   let cell = GetCellContent(row,colNo)
   if match(cell,"<\\d\\+\\t") > -1
-    let text  = join(readfile(".".Deslash(cell)),"\r")
-    silent! execute expand("!rm '.".cell[:-2]."'")
-    if g:OpenCol != -2 && g:OpenCol != colNo
-      call CollapseCells()
-      let g:OpenCol = colNo
+    let fname = ".".Deslash(cell)
+    if filereadable(fname)
+      let text  = join(readfile(".".Deslash(cell)),"\r")
+      silent! execute expand("!rm '.".cell[:-2]."'")
+      if g:OpenCol != -2 && g:OpenCol != colNo
+        call CollapseCells()
+        let g:OpenCol = colNo
+      endif
+      execute expand("s/".Escape(cell)."/".Rescape(text,colNo)."\t/")
+    else
+      echo "[top-table] WARNING: ".fname." not found"
     endif
-    execute expand("s/".Escape(cell)."/".Rescape(text,colNo)."/")
   endif
   normal `u
   call Status()
@@ -597,10 +658,14 @@ function! Increment()
   let row = getcurpos()[1]
   let colNo = GetCurCol()
   let content = GetCellContent(row,colNo)
+  let pretext = ""
+  if content/content != 1
+    let pretext = content[:-2]
+  endif
   while row < line('$')
-      let row += 1
       let content += 1
-      call SetCellContent(row,colNo,content. "\t")
+      call SetCellContent(row,colNo,pretext.content. "\t")
+      let row += 1
   endwhile
 endfunction
 
@@ -680,15 +745,18 @@ command! ColWise   :call EnterCols()
 command! RowsWise   :call EnterRows()
 
 " Column sizing
-command! Fit         :call FitColumns()
-command! Fix         :call FixColumns()
-command! ExpandCells   :call ExpandCells()<CR>
-command! CollapseCells :call CollapseCells()<CR>
+command! Fit           :call FitColumns()
+command! Fix           :call FixColumns()
+command! ExpandCells   :call ExpandCells()
+command! CollapseCells :call CollapseCells()
+command! DeleteColumn  :call DeleteColumn()
+command! InsertColumn  :call InsertColumn(0)
+command! AddColumn     :call InsertColumn(1)
 
 " Calculations
-command! Increment :call Increment()
-command! Sum      :call Calc('sum')
-command! Avg      :call Calc('avg')
+command! Increment     :call Increment()
+command! Sum           :call Calc('sum')
+command! Avg           :call Calc('avg')
 
 
 " ====================
@@ -712,8 +780,11 @@ nnoremap O   O<Tab><Esc>i
 nmap <buffer>k       k:call CellExpand()<CR>
 nmap <buffer>j       j:call CellExpand()<CR>
 
-nnoremap <buffer>yc     :call CellYank()<CR>
-nnoremap <buffer>dc     :call CellReplace("\t")<CR>
+nnoremap <buffer>yc     :call YankCell()<CR>
+nnoremap <buffer>dc     :call ReplaceCell("\t")<CR>
+nnoremap <buffer>DD     :DeleteColumn<CR>
+nnoremap <buffer><C-i>  :InsertColumn<CR>
+nnoremap <buffer><C-S-i>  :AddColumn<CR>
 
 nnoremap <buffer><TAB>   :call NextCol()<CR>
 nnoremap <buffer><S-TAB> :call PrevCol()<CR>
