@@ -2,7 +2,7 @@ Column1  	Column2
 1	Long text is concealed to the length of the column	
 	Reveal long text by moving to that cell	
 2	Use :Right for <ENTER> to cycle through rows instead of column	
-3	:Fit will widen columns
+3	:Fit will widen columns	
 	Swap columns with <S-LEFT/RIGHT>	
 = 6.0	Type == in normal mode for a sum	
 avg  2.0	Or the :Avg command for that	
