@@ -57,13 +57,13 @@ Normal `hjkl` with `<Ctrl>` moves (bubbles) rows up/down and columns left/right.
 A Cell that is wider than the column can be truncated.
 
 | R1C1   |  R1C2  |  R1C3 |
-| ______ | _______ | ______ |
+| ------ | ------- | ------ |
 | R2C1   |  Col2 with much to say |  R2C3 |
 
 becomes
 
 | R1C1   | R1C2   | R1C3   |
-| ______ | ______ | ______ |
+| ------ | ------ | ------ |
 | R2C1   | Col2 … | R2C3   |
 
 
@@ -92,15 +92,15 @@ collapsing a multiline cell, only the text up to the first semicolon is kept
 as the label.
 
 
-R1C1   >  R1C2  >  R1C3
-_______________________
-R2C1   >  Row; with much; to say >  R2C3
+R1C1   |  R1C2  |  R1C3
+-------|--------|------
+R2C1   |  Row; with much; to say |  R2C3
 
 This toggles to:
 
-R1C1   >  R1C2  >  R1C3
-_______________________
-R2C1   >  Row  …>  R2C3
+R1C1   |  R1C2  |  R1C3
+-------|--------|------
+R2C1   |  Row  …|  R2C3
 
 *SplitView*                                                         *<S-Enter>*
 
