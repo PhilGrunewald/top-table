@@ -108,8 +108,9 @@ Expanding a cell with `<S-Enter>` opens splits on the right to display the
 text over multiple lines for easy editing.
 
 R1C1   |  R1C2  |  R1C3  || Row
--------|--------|------  || with much
-R2C1   |  Row  …|  R2C3  || to say
+-------|--------|------  || -- 
+R2C1   |  Row  …|  R2C3  || with much 
+       |        |        || to say
 
 If the cell happens to end in `.tab`, it is treated as a link. The
 corresponding `.tab` file is opened (or created) in a split to the right.
