@@ -282,7 +282,7 @@ Key (insert)
 
 09 May 23   v3.0   Phil Grunewald      Multi-line support and bug fixes
 
-05 May 23   v2.1   Phil Grunewald      LeftRight with <S> and <C> to save buffer cycling behaviour
+05 May 23   v2.1   Phil Grunewald      LeftRight with S and C to save buffer cycling behaviour
 
 04 May 23   v2.0   Phil Grunewald      Save hidden text to hidden files
 
