@@ -108,10 +108,12 @@ fu! Header()
   normal mc
   highlight VertSplit   ctermfg=DarkGreen    ctermbg=black  cterm=NONE
   wincmd o
+  set laststatus=3      " just one statusline
+  set scrollopt=hor
   set scrollbind
   split
   set scrollbind
-  set scrollopt=hor
+  wincmd k
   normal gg
   resize 1
   wincmd j
@@ -556,6 +558,12 @@ fu! CellExpand()
     else
       echo "[top-table] WARNING: ".fname." not found"
     endif
+  else
+    if filereadable(".".Deslash(cell))
+      " cell that was collapsed (not wide enough), but was externally edited
+      let text  = join(readfile(".".Deslash(cell)),"\r")
+      call SetCell(row,colNo,Rescape(text)."\t")
+    endif
   endif
   normal `u
   call Status()
@@ -618,6 +626,7 @@ fu SplitView()
   let fname = expand("<cword>")
   let width = 60
   if fname[-4:] != ".tab" && &filetype == "tab"
+    call CellExpand() "update file name to latest content
     call CellCollapse()
     let row = getcurpos()[1]
     let colNo = GetColNo()
@@ -635,6 +644,12 @@ fu SplitView()
     " create a split to the right
     exe expand("vs ".fname)
   endif
+  if !filereadable(fname)
+    " this is a new file (wide col - no collapse was needed)
+    " add cell content
+    if fname[0] == "." | let fname = fname[1:] | endif
+    exe "s/^/".fname."/"
+  endif
   if getline('$')[0] == '#' && match(getline('$'),origin) == -1
     " add reference to original file
     exe "$s/$/ ".origin."/"
@@ -647,14 +662,20 @@ fu SplitView()
   endif
 endfu
 
+fu CloseCellView()
+  " Close split view and update cell content (XXX update cell content if no
+  " collapse needed)
+  w
+  bd
+endfu
 
 " ====================
 "   Conversion md pdf
 " ====================
 
 fu MarkdownTable()
-  call FitColumns()
   " convert to markdown table
+  call ExpandCells()
   let l = 1
   let separator = '  '
   let md = "--\n"

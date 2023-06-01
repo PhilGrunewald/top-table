@@ -56,17 +56,16 @@ let g:copilot_no_tab_map = v:true
 " ==============
 
 " avoid editing trimmed cells
-nnoremap i   mc:call CellExpand()<CR>`ci
-nnoremap O   O<Tab><Esc>i
-nmap <buffer>k       k:call CellExpand()<CR>
-nmap <buffer>j       j:call CellExpand()<CR>
+nnoremap <buffer>i   mc:call CellExpand()<CR>`ci
+nnoremap <buffer>O   O<Tab><Esc>i
+nnoremap <buffer>k   k:call CellExpand()<CR>
+nnoremap <buffer>j   j:call CellExpand()<CR>
 
-nnoremap <buffer>yc     :call YankCell()<CR>
-nnoremap <buffer>dc     :call ReplaceCell("\t")<CR>
-nnoremap <buffer>DD     :DeleteColumn<CR>
-nnoremap <buffer><C-i>  :InsertColumn<CR>
-nnoremap <buffer><C-S-i>  :AddColumn<CR>
-
+nnoremap <buffer>yc  :call YankCell()<CR>
+nnoremap <buffer>dc  :call ReplaceCell("\t")<CR>
+nnoremap <buffer>DD      :DeleteColumn<CR>
+nnoremap <buffer><C-i>   :InsertColumn<CR>
+nnoremap <buffer><C-S-i> :AddColumn<CR>
 nnoremap <buffer><TAB>   :call NextCol()<CR>
 nnoremap <buffer><S-TAB> :call PrevCol()<CR>
 
@@ -96,7 +95,7 @@ nnoremap <buffer><S-Left>   :call ColWidth('-')<CR>
 nnoremap <buffer>++        :call Increment()<CR>
 nnoremap <buffer>==        :call Calc('sum')<CR>
 
-nnoremap <S-Enter>         :call SplitView()<CR>
+nnoremap <buffer><S-Enter> :call SplitView()<CR>
 
 nnoremap <buffer>>>          :call CellToggle()<CR>
 nnoremap <buffer><C-.><C-.>  :call ExpandCells()<CR>

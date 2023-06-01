@@ -1,7 +1,6 @@
-*top-table.txt* simple table navigation and editing
+Vim plugin for simple table navigation and editing
 
-====================================================================
-CONTENTS                                          *top-table-contents*
+CONTENTS
 ====================================================================
 
     1. Introduction ......... |top-table-intro|
@@ -10,8 +9,7 @@ CONTENTS                                          *top-table-contents*
     4. Revision history ..... |top-table-revisions|
 
 
-====================================================================
-1. Introduction                                      *top-table-intro*
+1. Introduction
 ====================================================================
 
 Edit tabular data with the power of vim.
@@ -29,8 +27,7 @@ Top-table let's you
 - |Increment| columns with sequential numbers
 - |Sum| columns
 
-*^1* see Visidata and Sc-im for full blown spreadsheet features
-
+*^1* see Visidata and Sc-im for spreadsheet tools
 
 
 *MoveCells*
@@ -225,8 +222,7 @@ Key (insert)
   `;`              Gets treated as `\n` (looks neater and avoids escaping)
 
 
-====================================================================
-3. Commands                                       *top-table-commands*
+3. Commands
 ====================================================================
 
 - *Help*           open this file in split view
@@ -254,8 +250,7 @@ Key (insert)
 - *ColWise*        <ENTER> advances to the next column
 - *RowWise*        <ENTER> advances to the next row
 
-====================================================================
-4. Revision history                              *top-table-revisions*
+4. Revision history
 ====================================================================
 
 21 May 23   v3.3   Phil Grunewald
