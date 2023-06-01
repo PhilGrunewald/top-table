@@ -120,16 +120,19 @@ to say
 If the cell happens to end in `.tab`, it is treated as a link. The
 corresponding `.tab` file is opened (or created) in a split to the right.
 
+`master` table
+
 R1C1   |  R1C2           |
 -------|------------     |
 R2C1   |  subtable≫      |
-       |                 |
+
+`subtable`
 
 T2C1     |  T2C2
 ---------|------
 Nested   |  table
 with     |  optional back reference
-# master≫
+\# master≫ |
 
 
 To keep a back reference to the file from which this table was opened, add a
