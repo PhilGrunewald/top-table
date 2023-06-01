@@ -1,16 +1,4 @@
-Vim plugin for simple table navigation and editing
-
-CONTENTS
-========
-
-    1. Introduction ......... |top-table-intro|
-    2. Key bindings ......... |top-table-keys|
-    3. Commands ............. |top-table-commands|
-    4. Revision history ..... |top-table-revisions|
-
-
 # 1. Introduction
-
 
 Edit tabular data with the power of vim.
 This is not a spreadsheet (|^1|) plugin. It's a tool to navigate and organise
@@ -74,9 +62,9 @@ A Cell that is wider than the column can be truncated.
 
 becomes
 
-| R1C1   | R1C2   | R1C3 |
+| R1C1   | R1C2   | R1C3   |
 | ______ | ______ | ______ |
-| R2C1   | Col2 … | R2C3 |
+| R2C1   | Col2 … | R2C3   |
 
 
 *CellToggle*     `>>`     toggle this cell
