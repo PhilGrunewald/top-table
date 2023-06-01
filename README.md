@@ -74,9 +74,9 @@ A Cell that is wider than the column can be truncated.
 
 becomes
 
-| R1C1   |  R1C2   | R1C3 |
-| ______ | ________ | ______ |
-| R2C1   |  Col2 … | R2C3 |
+| R1C1   | R1C2   | R1C3 |
+| ______ | ______ | ______ |
+| R2C1   | Col2 … | R2C3 |
 
 
 *CellToggle*     `>>`     toggle this cell
