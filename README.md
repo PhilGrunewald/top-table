@@ -107,18 +107,30 @@ R2C1   |  Row  …|  R2C3
 Expanding a cell with `<S-Enter>` opens splits on the right to display the
 text over multiple lines for easy editing.
 
-R1C1   |  R1C2  |  R1C3  | Row
--------|--------|------  | -- 
-R2C1   |  Row  …|  R2C3  | with much 
-       |        |        | to say
+R1C1   |  R1C2  |  R1C3
+-------|--------|------
+R2C1   |  Row  …|  R2C3
+
+Row
+
+with much
+
+to say
 
 If the cell happens to end in `.tab`, it is treated as a link. The
 corresponding `.tab` file is opened (or created) in a split to the right.
 
-R1C1   |  R1C2           ||  T2C1     |  T2C2
--------|------------     ||  Nested   |  table
-R2C1   |  subtable≫      ||  with     |  optional back reference
-       |                 ||  # master≫
+R1C1   |  R1C2           |
+-------|------------     |
+R2C1   |  subtable≫      |
+       |                 |
+
+T2C1     |  T2C2
+---------|------
+Nested   |  table
+with     |  optional back reference
+# master≫
+
 
 To keep a back reference to the file from which this table was opened, add a
 `#` to the start of the last line and toggle the cell. Next time the file name
