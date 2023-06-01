@@ -9,8 +9,8 @@ CONTENTS
     4. Revision history ..... |top-table-revisions|
 
 
-1. Introduction
-===============
+# 1. Introduction
+
 
 Edit tabular data with the power of vim.
 This is not a spreadsheet (|^1|) plugin. It's a tool to navigate and organise
@@ -172,8 +172,7 @@ expanded. To avoid inadvertent data loss, the `undolevels` history is reset
 (collapsing the cell again via `undo` could not restore that file).
 
 
-2. Key bindings
-===============
+# 2. Key bindings
 
 Key (normal)
 -------------
@@ -221,8 +220,7 @@ Key (insert)
   `;`              Gets treated as `\n` (looks neater and avoids escaping)
 
 
-3. Commands
-===========
+# 3. Commands
 
 - *Help*           open this file in split view
 - *Backup*         save a fully expanded copy with `.table` extension
@@ -249,8 +247,7 @@ Key (insert)
 - *ColWise*        <ENTER> advances to the next column
 - *RowWise*        <ENTER> advances to the next row
 
-4. Revision history
-===================
+# 4. Revision history
 
 21 May 23   v3.3   Phil Grunewald
 
