@@ -553,7 +553,9 @@ fu! CellExpand()
     let fname = ".".Deslash(cell)
     if filereadable(fname)
       let text  = join(readfile(".".Deslash(cell)),"\r")
-      silent! exe expand("!rm '.".cell[:-2]."'")
+      " Do not delete file after expansion 
+      " the same tag can be used multiple times
+      " silent! exe expand("!rm '.".cell[:-2]."'")
       exe expand("s/".Escape(cell)."/".Rescape(text)."\t/")
     else
       echo "[top-table] WARNING: ".fname." not found"
