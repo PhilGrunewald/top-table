@@ -117,8 +117,7 @@ with much
 
 to say
 
-If the cell happens to end in `.tab`, it is treated as a link. The
-corresponding `.tab` file is opened (or created) in a split to the right.
+If the word under the cursor has the same extension as the table (e.g. `.tab` or `.tsv`), it is treated as a link. The file is opened (or created) in a split to the right.
 
 `master` table
 
@@ -157,7 +156,7 @@ that. (Turns out I use that more than I thought I would)
 
 CONVENTIONS
 
-*File-type* Files ending in `.tab` are autodetected. Alternatively use `:set ft=tab`
+*File-type* Files ending in `.tsv` or `.tab` are autodetected. Alternatively use `:set ft=tab`
 
 *Delimiter* The default delimiter is <TAB>. If the header line contains no
 <TAB>, but it does contain a comma, all commas are replaced with tabs. To
@@ -252,6 +251,10 @@ Key (insert)
 - *RowWise*        <ENTER> advances to the next row
 
 # 4. Revision history
+
+18 Jun 23   v3.4   Phil Grunewald
+    - added .tsv as auto-detect format for better compatability
+
 
 21 May 23   v3.3   Phil Grunewald
 

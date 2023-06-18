@@ -1,4 +1,6 @@
 :edit	top-table.txt	/*:edit*
+;;	top-table.txt	/*;;*
+<S-Enter>	top-table.txt	/*<S-Enter>*
 <leader>,	top-table.txt	/*<leader>,*
 AddColumn	top-table.txt	/*AddColumn*
 Avg	top-table.txt	/*Avg*
@@ -9,6 +11,7 @@ Collapse	top-table.txt	/*Collapse*
 CollapseCells	top-table.txt	/*CollapseCells*
 DeleteColumn	top-table.txt	/*DeleteColumn*
 Delimiter	top-table.txt	/*Delimiter*
+DocTable	top-table.txt	/*DocTable*
 Entry-mode	top-table.txt	/*Entry-mode*
 ExpandCells	top-table.txt	/*ExpandCells*
 File-type	top-table.txt	/*File-type*
@@ -18,17 +21,21 @@ Header	top-table.txt	/*Header*
 Help	top-table.txt	/*Help*
 Increment	top-table.txt	/*Increment*
 InsertColumn	top-table.txt	/*InsertColumn*
+LineBreaks	top-table.txt	/*LineBreaks*
+MarkdownTable	top-table.txt	/*MarkdownTable*
 MoveCells	top-table.txt	/*MoveCells*
 MoveColumn	top-table.txt	/*MoveColumn*
 MoveRow	top-table.txt	/*MoveRow*
 Multiline	top-table.txt	/*Multiline*
+PdfTable	top-table.txt	/*PdfTable*
 ResizeColumn	top-table.txt	/*ResizeColumn*
 RowWise	top-table.txt	/*RowWise*
+SplitView	top-table.txt	/*SplitView*
 Sum	top-table.txt	/*Sum*
+^1	top-table.txt	/*^1*
 top-table-commands	top-table.txt	/*top-table-commands*
 top-table-contents	top-table.txt	/*top-table-contents*
 top-table-intro	top-table.txt	/*top-table-intro*
 top-table-keys	top-table.txt	/*top-table-keys*
 top-table-revisions	top-table.txt	/*top-table-revisions*
 top-table.txt	top-table.txt	/*top-table.txt*
-x	top-table.txt	/*x*

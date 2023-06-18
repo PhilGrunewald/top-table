@@ -623,11 +623,12 @@ endf
 
 
 fu SplitView()
-  " Open cell conent in split view"
+  " Open cell content in split view"
   let origin = expand("%:t")
+  let extension = ".".expand("%:e")
   let fname = expand("<cword>")
   let width = 60
-  if fname[-4:] != ".tab" && &filetype == "tab"
+  if fname[-4:] != extension && &filetype == "tab"
     call CellExpand() "update file name to latest content
     call CellCollapse()
     let row = getcurpos()[1]
@@ -657,7 +658,7 @@ fu SplitView()
     exe "$s/$/ ".origin."/"
     normal gg
   endif
-  if fname[-4:] != ".tab"
+  if fname[-4:] != extension
     set ft=cell
     set syntax=cell
     exe "vertical resize ".width

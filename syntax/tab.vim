@@ -12,3 +12,4 @@ syn match CellCollapsed  /\zs<\d\+\ze\t/ conceal cchar=…
 syn match SpareSpace / \+\t/
 syn match OpenEnd /[^\t]\+$/
 syn match TableTag    "\.tab" conceal cchar=≫
+syn match TSVTag      "\.tsv" conceal cchar=≫
